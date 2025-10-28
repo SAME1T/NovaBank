@@ -1,0 +1,11 @@
+env/
+.venv/
+bin/
+obj/
+*.user
+.vs/
+.idea/
+.vscode/*
+!.vscode/settings.json
+.ipynb_checkpoints/
+*.log
