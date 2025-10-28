@@ -14,6 +14,7 @@ namespace NovaBank.Core.Entities
         public TransactionDirection Direction { get; private set; }
         public string Description { get; private set; }
         public string ReferenceCode { get; private set; }
+        public DateTime TransactionDate { get; private set; }
 
         public Transaction(Guid accountId, Money amount, TransactionDirection direction, string description)
         {
@@ -24,6 +25,7 @@ namespace NovaBank.Core.Entities
             Direction = direction;
             Description = description ?? string.Empty;
             ReferenceCode = Guid.NewGuid().ToString("N");
+            TransactionDate = DateTime.UtcNow;
         }
     }
 }

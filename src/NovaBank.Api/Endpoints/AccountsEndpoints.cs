@@ -59,6 +59,14 @@ public static class AccountsEndpoints
             return TypedResults.Ok(list.Select(a => new AccountResponse(a.Id, a.CustomerId, a.AccountNo.Value, a.Iban.Value, a.Currency.ToString(), a.Balance.Amount, a.OverdraftLimit)).ToList());
         });
 
+        g.MapGet("/by-account-no/{accountNo:long}", async Task<Results<Ok<AccountResponse>, NotFound>> (long accountNo, BankDbContext db) =>
+        {
+            var account = await db.Accounts.FirstOrDefaultAsync(a => a.AccountNo == new AccountNo(accountNo));
+            if (account is null) return TypedResults.NotFound();
+            var dto = new AccountResponse(account.Id, account.CustomerId, account.AccountNo.Value, account.Iban.Value, account.Currency.ToString(), account.Balance.Amount, account.OverdraftLimit);
+            return TypedResults.Ok(dto);
+        });
+
         return app;
     }
 }

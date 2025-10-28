@@ -15,16 +15,16 @@ public partial class FrmAuth : Form
         {
             var tc = txtLoginTc.Text?.Trim();
             var password = txtLoginPassword.Text?.Trim();
-            if (string.IsNullOrWhiteSpace(tc)) { MessageBox.Show("TC Kimlik No giriniz."); return; }
-            if (string.IsNullOrWhiteSpace(password)) { MessageBox.Show("Şifre giriniz."); return; }
+            if (string.IsNullOrWhiteSpace(tc)) { MessageBox.Show("TC Kimlik No giriniz.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (string.IsNullOrWhiteSpace(password)) { MessageBox.Show("Şifre giriniz.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             
             var loginReq = new LoginRequest(tc, password);
             var cust = await _api.PostAsync<LoginRequest, CustomerResponse>("/api/v1/customers/login", loginReq);
-            if (cust is null) { MessageBox.Show("Giriş başarısız."); return; }
+            if (cust is null) { MessageBox.Show("Giriş başarısız!\nTC Kimlik No veya şifre hatalı.", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
             LoggedInCustomerId = cust.Id;
             DialogResult = DialogResult.OK; Close();
         }
-        catch (Exception ex) { MessageBox.Show(ex.Message, "Hata"); }
+        catch (Exception ex) { MessageBox.Show($"Giriş sırasında hata oluştu:\n{ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error); }
     }
 
     private async void btnRegister_Click(object sender, EventArgs e)
@@ -34,9 +34,9 @@ public partial class FrmAuth : Form
             var password = txtRegPassword.Text?.Trim();
             var passwordConfirm = txtRegPasswordConfirm.Text?.Trim();
             
-            if (string.IsNullOrWhiteSpace(password)) { MessageBox.Show("Şifre giriniz."); return; }
-            if (password != passwordConfirm) { MessageBox.Show("Şifreler eşleşmiyor."); return; }
-            if (password.Length < 6) { MessageBox.Show("Şifre en az 6 karakter olmalıdır."); return; }
+            if (string.IsNullOrWhiteSpace(password)) { MessageBox.Show("Şifre giriniz.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (password != passwordConfirm) { MessageBox.Show("Şifreler eşleşmiyor.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (password.Length < 6) { MessageBox.Show("Şifre en az 6 karakter olmalıdır.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             
             var req = new CreateCustomerRequest(
                 txtRegTc.Text?.Trim() ?? "",
@@ -52,12 +52,24 @@ public partial class FrmAuth : Form
                 MessageBox.Show(await resp.Content.ReadAsStringAsync(), "Hata");
                 return;
             }
-            MessageBox.Show("Kayıt oluşturuldu. Giriş sekmesine TC'nizi yazarak giriş yapınız.", "Bilgi");
+            MessageBox.Show("Kayıt oluşturuldu!\nGiriş sekmesine TC'nizi yazarak giriş yapınız.", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
             // TC'yi giriş sekmesine taşı
             txtLoginTc.Text = txtRegTc.Text;
             // Giriş sekmesine geç
             tabControl1.SelectedIndex = 0;
         }
         catch (Exception ex) { MessageBox.Show(ex.Message, "Hata"); }
+    }
+
+    private void BtnShowPassword_Click(object? sender, EventArgs e)
+    {
+        txtLoginPassword.UseSystemPasswordChar = !txtLoginPassword.UseSystemPasswordChar;
+        btnShowPassword.Text = txtLoginPassword.UseSystemPasswordChar ? "👁" : "🙈";
+    }
+
+    private void BtnShowRegPassword_Click(object? sender, EventArgs e)
+    {
+        txtRegPassword.UseSystemPasswordChar = !txtRegPassword.UseSystemPasswordChar;
+        btnShowRegPassword.Text = txtRegPassword.UseSystemPasswordChar ? "👁" : "🙈";
     }
 }

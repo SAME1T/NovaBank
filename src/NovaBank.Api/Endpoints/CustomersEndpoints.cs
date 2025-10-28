@@ -43,6 +43,13 @@ public static class CustomersEndpoints
             return TypedResults.Ok(dto);
         });
 
+        g.MapGet("/", async Task<Ok<List<CustomerResponse>>> (BankDbContext db) =>
+        {
+            var customers = await db.Customers.ToListAsync();
+            var dtos = customers.Select(c => new CustomerResponse(c.Id, c.NationalId.Value, c.FirstName, c.LastName, c.Email, c.Phone, c.IsActive)).ToList();
+            return TypedResults.Ok(dtos);
+        });
+
         g.MapPost("/login", async Task<Results<Ok<CustomerResponse>, BadRequest<string>>> (LoginRequest req, BankDbContext db) =>
         {
             var c = await db.Customers.FirstOrDefaultAsync(x => x.NationalId == new NationalId(req.NationalId));

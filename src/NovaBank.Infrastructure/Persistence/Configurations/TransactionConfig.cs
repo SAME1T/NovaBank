@@ -26,6 +26,7 @@ public sealed class TransactionConfig : IEntityTypeConfiguration<Transaction>
         b.Property(x => x.Direction).HasConversion<int>();
         b.Property(x => x.Description).HasMaxLength(500);
         b.Property(x => x.ReferenceCode).HasMaxLength(64);
+        b.Property(x => x.TransactionDate).IsRequired();
 
         b.HasOne<Account>().WithMany().HasForeignKey(x => x.AccountId).OnDelete(DeleteBehavior.Cascade);
     }

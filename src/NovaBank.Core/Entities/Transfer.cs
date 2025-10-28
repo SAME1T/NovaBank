@@ -25,7 +25,7 @@ namespace NovaBank.Core.Entities
             Amount = amount;
             Channel = channel;
             ExternalIban = externalIban;
-            Status = PaymentStatus.Scheduled;
+            Status = PaymentStatus.Executed;
         }
 
         /// <summary>Marks the transfer as executed.</summary>

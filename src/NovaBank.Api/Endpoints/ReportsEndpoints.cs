@@ -19,8 +19,8 @@ public static class ReportsEndpoints
             if (acc is null) return TypedResults.NotFound();
 
             var txs = await db.Transactions
-                .Where(t => t.AccountId == accountId && t.CreatedAt >= from && t.CreatedAt <= to)
-                .OrderBy(t => t.CreatedAt)
+                .Where(t => t.AccountId == accountId && t.TransactionDate >= from && t.TransactionDate <= to)
+                .OrderBy(t => t.TransactionDate)
                 .ToListAsync();
 
             decimal credit = txs.Where(t => t.Direction.ToString()=="Credit").Sum(t => t.Amount.Amount);
@@ -28,7 +28,7 @@ public static class ReportsEndpoints
             decimal closing = acc.Balance.Amount;
             decimal opening = closing - (credit - debit);
 
-            var items = txs.Select(t => new AccountStatementItem(t.CreatedAt, t.Direction.ToString(), t.Amount.Amount, t.Amount.Currency.ToString(), t.Description, t.ReferenceCode)).ToList();
+            var items = txs.Select(t => new AccountStatementItem(t.TransactionDate, t.Direction.ToString(), t.Amount.Amount, t.Amount.Currency.ToString(), t.Description, t.ReferenceCode)).ToList();
             return TypedResults.Ok(new AccountStatementResponse(accountId, from, to, opening, credit, debit, closing, items));
         });
 

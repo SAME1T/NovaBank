@@ -13,7 +13,7 @@ public static class TransfersEndpoints
     {
         var g = app.MapGroup("/api/v1/transfers");
 
-        g.MapPost("/internal", async Task<Results<Ok<string>, BadRequest<string>, NotFound>>
+        g.MapPost("/internal", async Task<Results<Ok<TransferResponse>, BadRequest<string>, NotFound>>
         (TransferInternalRequest req, BankDbContext db) =>
         {
             if (req.FromAccountId == req.ToAccountId) return TypedResults.BadRequest("Aynı hesaba transfer olmaz.");
@@ -27,6 +27,9 @@ public static class TransfersEndpoints
             from.Withdraw(new Money(req.Amount, req.Currency));
             to.Deposit(new Money(req.Amount, req.Currency));
 
+            var transfer = new Transfer(from.Id, to.Id, new Money(req.Amount, req.Currency), TransferChannel.Internal);
+            db.Transfers.Add(transfer);
+
             db.Transactions.AddRange(
                 new Transaction(from.Id, new Money(req.Amount, req.Currency), TransactionDirection.Debit,  req.Description ?? string.Empty),
                 new Transaction(to.Id,   new Money(req.Amount, req.Currency), TransactionDirection.Credit, req.Description ?? string.Empty)
@@ -34,10 +37,19 @@ public static class TransfersEndpoints
             await db.SaveChangesAsync();
             await trx.CommitAsync();
 
-            return TypedResults.Ok("Transfer tamam.");
+            return TypedResults.Ok(new TransferResponse(
+                transfer.Id, 
+                transfer.FromAccountId, 
+                transfer.ToAccountId ?? Guid.Empty, 
+                transfer.Amount.Amount, 
+                transfer.Amount.Currency.ToString(), 
+                transfer.Channel.ToString(), 
+                transfer.Status.ToString(), 
+                transfer.CreatedAt
+            ));
         });
 
-        g.MapPost("/external", async Task<Results<Ok<string>, BadRequest<string>, NotFound>>
+        g.MapPost("/external", async Task<Results<Ok<TransferResponse>, BadRequest<string>, NotFound>>
         (TransferExternalRequest req, BankDbContext db) =>
         {
             var from = await db.Accounts.FirstOrDefaultAsync(a => a.Id == req.FromAccountId);
@@ -48,12 +60,22 @@ public static class TransfersEndpoints
             using var trx = await db.Database.BeginTransactionAsync();
             from.Withdraw(new Money(req.Amount, req.Currency));
             db.Transactions.Add(new Transaction(from.Id, new Money(req.Amount, req.Currency), TransactionDirection.Debit, req.Description ?? string.Empty));
-            db.Transfers.Add(new Transfer(from.Id, null, new Money(req.Amount, req.Currency), TransferChannel.EFT, req.ToIban));
-            var lastTransfer = await db.Transfers.OrderByDescending(t => t.CreatedAt).FirstAsync();
-            lastTransfer.MarkExecuted();
+            
+            var transfer = new Transfer(from.Id, null, new Money(req.Amount, req.Currency), TransferChannel.EFT, req.ToIban);
+            db.Transfers.Add(transfer);
             await db.SaveChangesAsync();
             await trx.CommitAsync();
-            return TypedResults.Ok("EFT/FAST talimatı kaydedildi.");
+            
+            return TypedResults.Ok(new TransferResponse(
+                transfer.Id, 
+                transfer.FromAccountId, 
+                transfer.ToAccountId ?? Guid.Empty, 
+                transfer.Amount.Amount, 
+                transfer.Amount.Currency.ToString(), 
+                transfer.Channel.ToString(), 
+                transfer.Status.ToString(), 
+                transfer.CreatedAt
+            ));
         });
 
         return app;
