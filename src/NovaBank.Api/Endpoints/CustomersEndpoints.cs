@@ -12,7 +12,7 @@ public static class CustomersEndpoints
     {
         var g = app.MapGroup("/api/v1/customers");
 
-        g.MapPost("/", async Task<Results<Created<CustomerResponse>, BadRequest<string>>> (CreateCustomerRequest req, BankDbContext db) =>
+        g.MapPost("/", async Task<Results<Created<CustomerResponse>, BadRequest<string>>> (CreateCustomerRequest req, BankDbContext db, NovaBank.Core.Services.IIbanGenerator ibanGenerator) =>
         {
             if (string.IsNullOrWhiteSpace(req.FirstName) || string.IsNullOrWhiteSpace(req.LastName))
                 return TypedResults.BadRequest("FirstName/LastName boş olamaz.");
@@ -29,6 +29,29 @@ public static class CustomersEndpoints
                 req.Password
             );
             db.Customers.Add(c);
+            await db.SaveChangesAsync();
+
+            // Otomatik vadesiz (TRY) hesap aç
+            // Benzersiz hesap no
+            var rnd = new Random();
+            long accountNo;
+            do { accountNo = rnd.Next(100000, 999999); }
+            while (await db.Accounts.AnyAsync(a => a.AccountNo == new AccountNo(accountNo)));
+
+            // Benzersiz IBAN
+            string iban;
+            do { iban = ibanGenerator.GenerateIban(); }
+            while (await db.Accounts.AnyAsync(a => a.Iban == new Iban(iban)));
+
+            var newAcc = new Account(
+                c.Id,
+                new AccountNo(accountNo),
+                new Iban(iban),
+                NovaBank.Core.Enums.Currency.TRY,
+                new NovaBank.Core.ValueObjects.Money(0m, NovaBank.Core.Enums.Currency.TRY),
+                0m
+            );
+            db.Accounts.Add(newAcc);
             await db.SaveChangesAsync();
 
             var dto = new CustomerResponse(c.Id, c.NationalId.Value, c.FirstName, c.LastName, c.Email, c.Phone, c.IsActive);

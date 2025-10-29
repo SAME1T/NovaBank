@@ -7,6 +7,8 @@ public partial class FrmMain : Form
 {
     private readonly ApiClient _api = new();
     private readonly Guid? _currentCustomerId;
+    private AccountResponse? _selectedAccount;
+    private bool _isLogoutFlow = false;
     public FrmMain(Guid? currentCustomerId = null) 
     { 
         _currentCustomerId = currentCustomerId;
@@ -76,9 +78,6 @@ public partial class FrmMain : Form
         if (_currentCustomerId.HasValue)
         {
             txtAccCustomerId.Text = _currentCustomerId.Value.ToString("N")[..8]; // İlk 8 karakter
-            txtDwAccountId.Text = "";
-            txtFromId.Text = "";
-            txtToId.Text = "";
             txtStmtAccountId.Text = "";
 
             // Müşteri bilgilerini yükle
@@ -98,6 +97,13 @@ public partial class FrmMain : Form
             {
                 lblWelcome.Text = $"Hoş Geldiniz, {customer.FirstName} {customer.LastName}";
                 lblStatus.Text = $"Giriş yapıldı: {customer.FirstName} {customer.LastName} | {DateTime.Now:dd.MM.yyyy HH:mm}";
+                if (lblProfName != null)
+                {
+                    lblProfName.Text = $"Ad Soyad: {customer.FirstName} {customer.LastName}";
+                    lblProfNationalId.Text = $"TCKN: {customer.NationalId}";
+                    lblProfEmail.Text = $"E-posta: {customer.Email ?? "-"}";
+                    lblProfPhone.Text = $"Telefon: {customer.Phone ?? "-"}";
+                }
             }
         }
         catch (Exception ex)
@@ -119,12 +125,40 @@ public partial class FrmMain : Form
                 var totalBalance = list.Sum(a => a.Balance);
                 lblTotalBalance.Text = $"Toplam Bakiye: {totalBalance:N2} TL";
                 lblAccountCount.Text = $"Hesap Sayısı: {list.Count}";
+
+                // Varsayılan seçili hesap
+                if (list.Count > 0)
+                {
+                    _selectedAccount = list[0];
+                    gridAccounts.ClearSelection();
+                    gridAccounts.Rows[0].Selected = true;
+                    BindSenderSummary();
+                }
+                gridAccounts.SelectionChanged -= GridAccounts_SelectionChanged;
+                gridAccounts.SelectionChanged += GridAccounts_SelectionChanged;
             }
         }
         catch (Exception ex)
         {
             MessageBox.Show($"Hesaplar yüklenirken hata: {ex.Message}", "Uyarı");
         }
+    }
+
+    private void GridAccounts_SelectionChanged(object? sender, EventArgs e)
+    {
+        if (gridAccounts.SelectedRows.Count > 0)
+        {
+            _selectedAccount = gridAccounts.SelectedRows[0].DataBoundItem as AccountResponse;
+            BindSenderSummary();
+        }
+    }
+
+    private void BindSenderSummary()
+    {
+        if (_selectedAccount == null) return;
+        // Designer'da oluşturulan label adı: lblSenderBind
+        if (lblSenderBind != null)
+            lblSenderBind.Text = $"Gönderen: {_selectedAccount.Iban} ({_selectedAccount.Currency})";
     }
 
     private void GridAccounts_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
@@ -141,9 +175,14 @@ public partial class FrmMain : Form
     {
         try
         {
-            if (!TryGuidFromShort(txtAccCustomerId.Text, out var custId)) return;
-            if (!long.TryParse(txtAccountNo.Text, out var accNo)) { MessageBox.Show("Hesap No sayısal olmalıdır.", "Uyarı"); return; }
+            var custId = _currentCustomerId ?? Guid.Empty;
+            if (custId == Guid.Empty) { MessageBox.Show("Müşteri bulunamadı (giriş gerekli)", "Uyarı"); return; }
             if (!TryDec(txtOverdraft.Text, out var od, "Ek Hesap Limiti")) return;
+            
+            // Hesap numarasını otomatik oluştur (rastgele)
+            var random = new Random();
+            var accNo = random.Next(100000, 999999);
+            
             var req = new CreateAccountRequest(
                 custId,
                 accNo,
@@ -152,7 +191,7 @@ public partial class FrmMain : Form
             );
             var resp = await _api.PostAsync("/api/v1/accounts", req);
             if (!resp.IsSuccessStatusCode) { MessageBox.Show(await resp.Content.ReadAsStringAsync(), "Error"); return; }
-            MessageBox.Show("Hesap oluşturuldu. IBAN otomatik oluşturuldu.", "OK");
+            MessageBox.Show($"Hesap oluşturuldu!\nHesap No: {accNo}\nIBAN otomatik oluşturuldu.", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
             // Hesapları yenile
             await LoadAccounts();
         }
@@ -163,14 +202,14 @@ public partial class FrmMain : Form
     {
         try
         {
-            if (!TryAccountNo(txtDwAccountId.Text, out var accountNo)) return;
             if (!TryDec(txtDepositAmount.Text, out var amt, "Tutar")) return;
             
-            // Hesap numarasından hesap ID'sini bul
-            var account = await FindAccountByNumber(accountNo);
-            if (account == null) { MessageBox.Show("Hesap bulunamadı.", "Uyarı"); return; }
+            var account = _selectedAccount;
+            if (account == null) { MessageBox.Show("Lütfen bir hesap seçin.", "Uyarı"); return; }
             
             var req = new DepositRequest(account.Id, amt, (NovaBank.Core.Enums.Currency)cmbDwCurrency.SelectedItem!, txtDepositDesc.Text);
+            var confirm = MessageBox.Show($"{amt:N2} {cmbDwCurrency.SelectedItem} yatırılacak. Onaylıyor musunuz?", "Onay", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (confirm != DialogResult.Yes) return;
             var resp = await _api.PostAsync("/api/v1/transactions/deposit", req);
             if (resp.IsSuccessStatusCode)
             {
@@ -190,14 +229,14 @@ public partial class FrmMain : Form
     {
         try
         {
-            if (!TryAccountNo(txtDwAccountId.Text, out var accountNo)) return;
             if (!TryDec(txtWithdrawAmount.Text, out var amt2, "Tutar")) return;
             
-            // Hesap numarasından hesap ID'sini bul
-            var account = await FindAccountByNumber(accountNo);
-            if (account == null) { MessageBox.Show("Hesap bulunamadı.", "Uyarı"); return; }
+            var account = _selectedAccount;
+            if (account == null) { MessageBox.Show("Lütfen bir hesap seçin.", "Uyarı"); return; }
             
             var req = new WithdrawRequest(account.Id, amt2, (NovaBank.Core.Enums.Currency)cmbDwCurrency.SelectedItem!, txtWithdrawDesc.Text);
+            var confirm = MessageBox.Show($"{amt2:N2} {cmbDwCurrency.SelectedItem} çekilecek. Onaylıyor musunuz?", "Onay", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (confirm != DialogResult.Yes) return;
             var resp = await _api.PostAsync("/api/v1/transactions/withdraw", req);
             if (resp.IsSuccessStatusCode)
             {
@@ -213,31 +252,21 @@ public partial class FrmMain : Form
         catch (Exception ex) { MessageBox.Show(ex.Message, "Error"); }
     }
 
-    private async void btnInternalTransfer_Click(object? sender, EventArgs e)
+    private void btnSelectAccount_Click(object? sender, EventArgs e)
     {
         try
         {
-            if (!TryAccountNo(txtFromId.Text, out var fromAccountNo)) return;
-            if (!TryAccountNo(txtToId.Text, out var toAccountNo)) return;
-            if (!TryDec(txtAmount.Text, out var tamt, "Tutar")) return;
-            
-            // Hesap numaralarından hesap ID'lerini bul
-            var fromAccount = await FindAccountByNumber(fromAccountNo);
-            var toAccount = await FindAccountByNumber(toAccountNo);
-            if (fromAccount == null) { MessageBox.Show("Gönderen hesap bulunamadı.", "Uyarı"); return; }
-            if (toAccount == null) { MessageBox.Show("Alıcı hesap bulunamadı.", "Uyarı"); return; }
-            
-            var req = new TransferInternalRequest(fromAccount.Id, toAccount.Id, tamt, (NovaBank.Core.Enums.Currency)cmbTransCurrency.SelectedItem!, txtTransDesc.Text);
-            var resp = await _api.PostAsync("/api/v1/transfers/internal", req);
-            if (resp.IsSuccessStatusCode)
+            // Hesaplarım sayfasındaki hesaplardan birini seç
+            if (gridAccounts.SelectedRows.Count > 0)
             {
-                MessageBox.Show($"İç transfer işlemi başarılı!\nTutar: {tamt:N2} {cmbTransCurrency.SelectedItem}", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                await LoadAccounts(); // Hesapları yenile
+                _selectedAccount = gridAccounts.SelectedRows[0].DataBoundItem as AccountResponse;
+                BindSenderSummary();
+                if (_selectedAccount != null)
+                    MessageBox.Show($"Gönderen hesap seçildi: {_selectedAccount.Iban}", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             else
             {
-                var errorMsg = await resp.Content.ReadAsStringAsync();
-                MessageBox.Show($"İç transfer işlemi başarısız!\nHata: {errorMsg}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Lütfen hesaplarım sayfasından bir hesap seçin.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
         catch (Exception ex) { MessageBox.Show(ex.Message, "Error"); }
@@ -247,25 +276,25 @@ public partial class FrmMain : Form
     {
         try
         {
-            if (!TryAccountNo(txtFromId.Text, out var fromAccountNo)) return;
             if (string.IsNullOrWhiteSpace(txtToIban.Text)) { MessageBox.Show("Alıcı IBAN zorunludur.", "Uyarı"); return; }
             if (!TryDec(txtAmount.Text, out var tamt2, "Tutar")) return;
             
-            // Hesap numarasından hesap ID'sini bul
-            var fromAccount = await FindAccountByNumber(fromAccountNo);
-            if (fromAccount == null) { MessageBox.Show("Gönderen hesap bulunamadı.", "Uyarı"); return; }
+            var fromAccount = _selectedAccount;
+            if (fromAccount == null) { MessageBox.Show("Lütfen bir hesap seçin.", "Uyarı"); return; }
             
-            var req = new TransferExternalRequest(fromAccount.Id, txtToIban.Text, tamt2, (NovaBank.Core.Enums.Currency)cmbTransCurrency.SelectedItem!, txtTransDesc.Text);
+            var req = new TransferExternalRequest(fromAccount.Id, txtToIban.Text.Trim(), tamt2, (NovaBank.Core.Enums.Currency)cmbTransCurrency.SelectedItem!, txtTransDesc.Text);
+            var confirm = MessageBox.Show($"{tamt2:N2} {cmbTransCurrency.SelectedItem} tutarında transfer yapılacak. Onaylıyor musunuz?", "Onay", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (confirm != DialogResult.Yes) return;
             var resp = await _api.PostAsync("/api/v1/transfers/external", req);
             if (resp.IsSuccessStatusCode)
             {
-                MessageBox.Show($"EFT/FAST işlemi başarılı!\nTutar: {tamt2:N2} {cmbTransCurrency.SelectedItem}\nIBAN: {txtToIban.Text}", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show($"Transfer işlemi başarılı!\nTutar: {tamt2:N2} {cmbTransCurrency.SelectedItem}\nAlıcı IBAN: {txtToIban.Text}", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 await LoadAccounts(); // Hesapları yenile
             }
             else
             {
                 var errorMsg = await resp.Content.ReadAsStringAsync();
-                MessageBox.Show($"EFT/FAST işlemi başarısız!\nHata: {errorMsg}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"Transfer işlemi başarısız!\nHata: {errorMsg}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
         catch (Exception ex) { MessageBox.Show(ex.Message, "Error"); }
@@ -275,14 +304,14 @@ public partial class FrmMain : Form
     {
         try
         {
-            if (!TryAccountNo(txtStmtAccountId.Text, out var accountNo)) return;
+            var account = _selectedAccount;
+            if (account == null) { MessageBox.Show("Lütfen bir hesap seçin.", "Uyarı"); return; }
             
-            // Hesap numarasından hesap ID'sini bul
-            var account = await FindAccountByNumber(accountNo);
-            if (account == null) { MessageBox.Show("Hesap bulunamadı.", "Uyarı"); return; }
-            
-            var from = dtFrom.Value.Date;
-            var to   = dtTo.Value.Date.AddDays(1).AddTicks(-1);
+            var fromLocal = dtFrom.Value.Date;
+            var toLocal   = dtTo.Value.Date.AddDays(1).AddTicks(-1);
+            if (fromLocal > toLocal) { MessageBox.Show("Bitiş tarihi başlangıçtan küçük olamaz", "Uyarı"); return; }
+            var from = DateTime.SpecifyKind(fromLocal, DateTimeKind.Local).ToUniversalTime();
+            var to   = DateTime.SpecifyKind(toLocal, DateTimeKind.Local).ToUniversalTime();
             var url = $"/api/v1/reports/account-statement?accountId={account.Id}&from={from:O}&to={to:O}";
             var stmt = await _api.GetAsync<AccountStatementResponse>(url);
             if (stmt is null) { MessageBox.Show("Kayıt bulunamadı"); return; }
@@ -305,15 +334,66 @@ public partial class FrmMain : Form
         }
     }
 
+    private async Task<AccountResponse?> FindAccountByIban(string iban)
+    {
+        try
+        {
+            // IBAN ile hesap arama
+            return await _api.GetAsync<AccountResponse>($"/api/v1/accounts/by-iban/{iban}");
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private void MnuLogout_Click(object? sender, EventArgs e)
     {
-        var result = MessageBox.Show("Çıkış yapmak istediğinizden emin misiniz?", "Çıkış", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-        if (result == DialogResult.Yes)
+        var result = MessageBox.Show("Çıkış yapıp farklı kullanıcıyla giriş yapmak ister misiniz?", "Çıkış", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (result != DialogResult.Yes) return;
+
+        _isLogoutFlow = true;
+        this.Hide();
+
+        using var auth = new FrmAuth();
+        var dialog = auth.ShowDialog();
+        if (dialog == DialogResult.OK && auth.LoggedInCustomerId.HasValue)
         {
-            this.Hide();
-            var loginForm = new FrmAuth();
-            loginForm.Show();
-            this.Close();
+            var newMain = new FrmMain(auth.LoggedInCustomerId.Value);
+            newMain.StartPosition = FormStartPosition.CenterScreen;
+            // Yeni ana form kapanınca bu (eski) formu da kapat
+            newMain.FormClosed += (s, args) => { this.Close(); };
+            newMain.Show();
+            return;
+        }
+
+        // Kullanıcı pencereyi X ile kapattı veya vazgeçtiyse uygulamayı önceki oturuma döndürmeden kapat
+        this.Close();
+    }
+
+    private void FrmMain_FormClosing(object? sender, FormClosingEventArgs e)
+    {
+        // Kullanıcı X ile kapatırsa uygulamayı tamamen kapat
+        if (!_isLogoutFlow && e.CloseReason == CloseReason.UserClosing)
+        {
+            System.Windows.Forms.Application.Exit();
+        }
+    }
+
+    private async void TxtToIban_Leave(object? sender, EventArgs e)
+    {
+        try
+        {
+            lblRecipientName.Text = string.Empty;
+            var iban = txtToIban.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(iban)) return;
+            var ownerName = await _api.GetAsync<string>($"/api/v1/accounts/owner-by-iban/{iban}");
+            if (!string.IsNullOrWhiteSpace(ownerName))
+                lblRecipientName.Text = ownerName;
+        }
+        catch
+        {
+            // alıcı bulunamazsa sessiz geç
         }
     }
 }

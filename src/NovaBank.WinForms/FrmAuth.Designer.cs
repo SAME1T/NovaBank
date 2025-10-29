@@ -51,7 +51,8 @@ partial class FrmAuth
         tabLogin.Controls.Add(pnlLogin);
 
         // Register tab - Modern Design
-        var pnlRegister = new Panel() { Left=50, Top=50, Width=500, Height=400, BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
+        this.tabRegister.AutoScroll = true;
+        var pnlRegister = new Panel() { Left=50, Top=20, Width=500, Height=600, BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
         var lblRegisterTitle = new Label() { Left=20, Top=20, Width=200, Height=30, Text="Kayıt Ol", Font=new Font("Segoe UI", 16, FontStyle.Bold), ForeColor=Color.FromArgb(25, 118, 210) };
         
         var lblRegTc = new Label() { Left=20, Top=60, Width=100, Height=20, Text="TC Kimlik No:", Font=new Font("Segoe UI", 9) };
@@ -72,12 +73,14 @@ partial class FrmAuth
         var lblRegPassword = new Label() { Left=20, Top=300, Width=100, Height=20, Text="Şifre:", Font=new Font("Segoe UI", 9) };
         txtRegPassword = new TextBox(){ Left=20, Top=325, Width=300, PlaceholderText="Şifre", UseSystemPasswordChar=true, BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle, Font=new Font("Segoe UI", 10)};
         btnShowRegPassword = new Button(){ Left=330, Top=325, Width=30, Height=25, Text="👁", BackColor=Color.Transparent, FlatStyle=FlatStyle.Flat, Font=new Font("Segoe UI", 12)};
+        var lblRegPasswordConfirm = new Label() { Left=20, Top=360, Width=150, Height=20, Text="Şifre (Tekrar):", Font=new Font("Segoe UI", 9) };
+        txtRegPasswordConfirm = new TextBox(){ Left=20, Top=385, Width=300, PlaceholderText="Şifre (tekrar)", UseSystemPasswordChar=true, BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle, Font=new Font("Segoe UI", 10)};
         btnShowRegPassword.Click += BtnShowRegPassword_Click;
         
-        btnRegister = new Button(){ Left=20, Top=370, Width=120, Height=40, Text="Kayıt Ol", BackColor=Color.FromArgb(76, 175, 80), ForeColor=Color.White, FlatStyle=FlatStyle.Flat, Font=new Font("Segoe UI", 10, FontStyle.Bold)};
+        btnRegister = new Button(){ Left=20, Top=430, Width=120, Height=40, Text="Kayıt Ol", BackColor=Color.FromArgb(76, 175, 80), ForeColor=Color.White, FlatStyle=FlatStyle.Flat, Font=new Font("Segoe UI", 10, FontStyle.Bold)};
         btnRegister.Click += btnRegister_Click;
         
-        pnlRegister.Controls.AddRange(new Control[]{lblRegisterTitle, lblRegTc, txtRegTc, lblRegAd, txtRegAd, lblRegSoyad, txtRegSoyad, lblRegEmail, txtRegEmail, lblRegTel, txtRegTel, lblRegPassword, txtRegPassword, btnShowRegPassword, btnRegister});
+        pnlRegister.Controls.AddRange(new Control[]{lblRegisterTitle, lblRegTc, txtRegTc, lblRegAd, txtRegAd, lblRegSoyad, txtRegSoyad, lblRegEmail, txtRegEmail, lblRegTel, txtRegTel, lblRegPassword, txtRegPassword, btnShowRegPassword, lblRegPasswordConfirm, txtRegPasswordConfirm, btnRegister});
         tabRegister.Controls.Add(pnlRegister);
     }
 }

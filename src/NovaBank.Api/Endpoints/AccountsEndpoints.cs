@@ -67,6 +67,25 @@ public static class AccountsEndpoints
             return TypedResults.Ok(dto);
         });
 
+        g.MapGet("/by-iban/{iban}", async Task<Results<Ok<AccountResponse>, NotFound>> (string iban, BankDbContext db) =>
+        {
+            var account = await db.Accounts.FirstOrDefaultAsync(a => a.Iban == new Iban(iban));
+            if (account is null) return TypedResults.NotFound();
+            var dto = new AccountResponse(account.Id, account.CustomerId, account.AccountNo.Value, account.Iban.Value, account.Currency.ToString(), account.Balance.Amount, account.OverdraftLimit);
+            return TypedResults.Ok(dto);
+        });
+
+        // IBAN'dan hesap sahibinin ad-soyad bilgisini getir
+        g.MapGet("/owner-by-iban/{iban}", async Task<Results<Ok<string>, NotFound>> (string iban, BankDbContext db) =>
+        {
+            var account = await db.Accounts.FirstOrDefaultAsync(a => a.Iban == new Iban(iban));
+            if (account is null) return TypedResults.NotFound();
+            var cust = await db.Customers.FirstOrDefaultAsync(c => c.Id == account.CustomerId);
+            if (cust is null) return TypedResults.NotFound();
+            var fullName = $"{cust.FirstName} {cust.LastName}";
+            return TypedResults.Ok(fullName);
+        });
+
         return app;
     }
 }

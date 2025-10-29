@@ -60,8 +60,21 @@ public static class TransfersEndpoints
             using var trx = await db.Database.BeginTransactionAsync();
             from.Withdraw(new Money(req.Amount, req.Currency));
             db.Transactions.Add(new Transaction(from.Id, new Money(req.Amount, req.Currency), TransactionDirection.Debit, req.Description ?? string.Empty));
-            
-            var transfer = new Transfer(from.Id, null, new Money(req.Amount, req.Currency), TransferChannel.EFT, req.ToIban);
+
+            // IBAN bizim bankamızdaysa alıcıyı da yatır
+            Guid? toAccountId = null;
+            var internalTo = await db.Accounts.FirstOrDefaultAsync(a => a.Iban == new Iban(req.ToIban));
+            if (internalTo is not null)
+            {
+                if (internalTo.Currency != req.Currency)
+                    return TypedResults.BadRequest("Alıcı hesabın para birimi uyuşmuyor.");
+
+                internalTo.Deposit(new Money(req.Amount, req.Currency));
+                db.Transactions.Add(new Transaction(internalTo.Id, new Money(req.Amount, req.Currency), TransactionDirection.Credit, req.Description ?? string.Empty));
+                toAccountId = internalTo.Id;
+            }
+
+            var transfer = new Transfer(from.Id, toAccountId, new Money(req.Amount, req.Currency), TransferChannel.EFT, req.ToIban);
             db.Transfers.Add(transfer);
             await db.SaveChangesAsync();
             await trx.CommitAsync();
