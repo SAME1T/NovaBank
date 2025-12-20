@@ -1,11 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore;
-using NovaBank.Api.Contracts;
-using NovaBank.Core.Entities;
-using NovaBank.Core.Enums;
-using NovaBank.Core.Services;
-using NovaBank.Core.ValueObjects;
-using NovaBank.Infrastructure.Persistence;
+using NovaBank.Application.Accounts;
+using NovaBank.Application.Common.Errors;
+using NovaBank.Contracts.Accounts;
 
 namespace NovaBank.Api.Endpoints;
 public static class AccountsEndpoints
@@ -14,76 +10,55 @@ public static class AccountsEndpoints
     {
         var g = app.MapGroup("/api/v1/accounts");
 
-        g.MapPost("/", async Task<Results<Created<AccountResponse>, BadRequest<string>>> (CreateAccountRequest req, BankDbContext db, IIbanGenerator ibanGenerator) =>
+        g.MapPost("/", async Task<Results<Created<AccountResponse>, BadRequest<string>>> (CreateAccountRequest req, IAccountsService service) =>
         {
-            var customer = await db.Customers.FindAsync(req.CustomerId);
-            if (customer is null) return TypedResults.BadRequest("Customer bulunamadı.");
+            var result = await service.CreateAccountAsync(req);
+            if (!result.IsSuccess)
+                return TypedResults.BadRequest(result.ErrorMessage ?? "Hesap oluşturulamadı.");
 
-            if (await db.Accounts.AnyAsync(a => a.AccountNo == new AccountNo(req.AccountNo)))
-                return TypedResults.BadRequest("AccountNo mevcut.");
-
-            // Otomatik IBAN oluştur
-            string generatedIban;
-            do
-            {
-                generatedIban = ibanGenerator.GenerateIban();
-            } while (await db.Accounts.AnyAsync(a => a.Iban == new Iban(generatedIban)));
-
-            var acc = new Account(
-                req.CustomerId,
-                new AccountNo(req.AccountNo),
-                new Iban(generatedIban),
-                req.Currency,
-                new Money(0m, req.Currency),
-                Math.Max(0, req.OverdraftLimit)
-            );
-
-            db.Accounts.Add(acc);
-            await db.SaveChangesAsync();
-
-            var dto = new AccountResponse(acc.Id, acc.CustomerId, acc.AccountNo.Value, acc.Iban.Value, acc.Currency.ToString(), acc.Balance.Amount, acc.OverdraftLimit);
-            return TypedResults.Created($"/api/v1/accounts/{acc.Id}", dto);
+            return TypedResults.Created($"/api/v1/accounts/{result.Value!.Id}", result.Value);
         });
 
-        g.MapGet("/{id:guid}", async Task<Results<Ok<AccountResponse>, NotFound>> (Guid id, BankDbContext db) =>
+        g.MapGet("/{id:guid}", async Task<Results<Ok<AccountResponse>, NotFound>> (Guid id, IAccountsService service) =>
         {
-            var a = await db.Accounts.FindAsync(id);
-            if (a is null) return TypedResults.NotFound();
-            var dto = new AccountResponse(a.Id, a.CustomerId, a.AccountNo.Value, a.Iban.Value, a.Currency.ToString(), a.Balance.Amount, a.OverdraftLimit);
-            return TypedResults.Ok(dto);
+            var result = await service.GetByIdAsync(id);
+            if (!result.IsSuccess)
+                return TypedResults.NotFound();
+
+            return TypedResults.Ok(result.Value!);
         });
 
-        g.MapGet("/by-customer/{customerId:guid}", async Task<Ok<List<AccountResponse>>> (Guid customerId, BankDbContext db) =>
+        g.MapGet("/by-customer/{customerId:guid}", async Task<Ok<List<AccountResponse>>> (Guid customerId, IAccountsService service) =>
         {
-            var list = await db.Accounts.Where(a => a.CustomerId == customerId).ToListAsync();
-            return TypedResults.Ok(list.Select(a => new AccountResponse(a.Id, a.CustomerId, a.AccountNo.Value, a.Iban.Value, a.Currency.ToString(), a.Balance.Amount, a.OverdraftLimit)).ToList());
+            var result = await service.GetByCustomerIdAsync(customerId);
+            return TypedResults.Ok(result.Value ?? new List<AccountResponse>());
         });
 
-        g.MapGet("/by-account-no/{accountNo:long}", async Task<Results<Ok<AccountResponse>, NotFound>> (long accountNo, BankDbContext db) =>
+        g.MapGet("/by-account-no/{accountNo:long}", async Task<Results<Ok<AccountResponse>, NotFound>> (long accountNo, IAccountsService service) =>
         {
-            var account = await db.Accounts.FirstOrDefaultAsync(a => a.AccountNo == new AccountNo(accountNo));
-            if (account is null) return TypedResults.NotFound();
-            var dto = new AccountResponse(account.Id, account.CustomerId, account.AccountNo.Value, account.Iban.Value, account.Currency.ToString(), account.Balance.Amount, account.OverdraftLimit);
-            return TypedResults.Ok(dto);
+            var result = await service.GetByAccountNoAsync(accountNo);
+            if (!result.IsSuccess)
+                return TypedResults.NotFound();
+
+            return TypedResults.Ok(result.Value!);
         });
 
-        g.MapGet("/by-iban/{iban}", async Task<Results<Ok<AccountResponse>, NotFound>> (string iban, BankDbContext db) =>
+        g.MapGet("/by-iban/{iban}", async Task<Results<Ok<AccountResponse>, NotFound>> (string iban, IAccountsService service) =>
         {
-            var account = await db.Accounts.FirstOrDefaultAsync(a => a.Iban == new Iban(iban));
-            if (account is null) return TypedResults.NotFound();
-            var dto = new AccountResponse(account.Id, account.CustomerId, account.AccountNo.Value, account.Iban.Value, account.Currency.ToString(), account.Balance.Amount, account.OverdraftLimit);
-            return TypedResults.Ok(dto);
+            var result = await service.GetByIbanAsync(iban);
+            if (!result.IsSuccess)
+                return TypedResults.NotFound();
+
+            return TypedResults.Ok(result.Value!);
         });
 
-        // IBAN'dan hesap sahibinin ad-soyad bilgisini getir
-        g.MapGet("/owner-by-iban/{iban}", async Task<Results<Ok<string>, NotFound>> (string iban, BankDbContext db) =>
+        g.MapGet("/owner-by-iban/{iban}", async Task<Results<Ok<string>, NotFound>> (string iban, IAccountsService service) =>
         {
-            var account = await db.Accounts.FirstOrDefaultAsync(a => a.Iban == new Iban(iban));
-            if (account is null) return TypedResults.NotFound();
-            var cust = await db.Customers.FirstOrDefaultAsync(c => c.Id == account.CustomerId);
-            if (cust is null) return TypedResults.NotFound();
-            var fullName = $"{cust.FirstName} {cust.LastName}";
-            return TypedResults.Ok(fullName);
+            var result = await service.GetOwnerNameByIbanAsync(iban);
+            if (!result.IsSuccess)
+                return TypedResults.NotFound();
+
+            return TypedResults.Ok(result.Value!);
         });
 
         return app;

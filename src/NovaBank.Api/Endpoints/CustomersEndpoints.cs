@@ -1,9 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore;
-using NovaBank.Api.Contracts;
-using NovaBank.Core.Entities;
-using NovaBank.Core.ValueObjects;
-using NovaBank.Infrastructure.Persistence;
+using NovaBank.Application.Customers;
+using NovaBank.Contracts.Customers;
 
 namespace NovaBank.Api.Endpoints;
 public static class CustomersEndpoints
@@ -12,74 +9,37 @@ public static class CustomersEndpoints
     {
         var g = app.MapGroup("/api/v1/customers");
 
-        g.MapPost("/", async Task<Results<Created<CustomerResponse>, BadRequest<string>>> (CreateCustomerRequest req, BankDbContext db, NovaBank.Core.Services.IIbanGenerator ibanGenerator) =>
+        g.MapPost("/", async Task<Results<Created<CustomerResponse>, BadRequest<string>>> (CreateCustomerRequest req, ICustomersService service) =>
         {
-            if (string.IsNullOrWhiteSpace(req.FirstName) || string.IsNullOrWhiteSpace(req.LastName))
-                return TypedResults.BadRequest("FirstName/LastName boş olamaz.");
+            var result = await service.CreateCustomerAsync(req);
+            if (!result.IsSuccess)
+                return TypedResults.BadRequest(result.ErrorMessage ?? "Müşteri oluşturulamadı.");
 
-            var exists = await db.Customers.AnyAsync(c => c.NationalId == new NationalId(req.NationalId));
-            if (exists) return TypedResults.BadRequest("NationalId zaten kayıtlı.");
-
-            var c = new Customer(
-                new NationalId(req.NationalId),
-                req.FirstName,
-                req.LastName,
-                req.Email ?? string.Empty,
-                req.Phone ?? string.Empty,
-                req.Password
-            );
-            db.Customers.Add(c);
-            await db.SaveChangesAsync();
-
-            // Otomatik vadesiz (TRY) hesap aç
-            // Benzersiz hesap no
-            var rnd = new Random();
-            long accountNo;
-            do { accountNo = rnd.Next(100000, 999999); }
-            while (await db.Accounts.AnyAsync(a => a.AccountNo == new AccountNo(accountNo)));
-
-            // Benzersiz IBAN
-            string iban;
-            do { iban = ibanGenerator.GenerateIban(); }
-            while (await db.Accounts.AnyAsync(a => a.Iban == new Iban(iban)));
-
-            var newAcc = new Account(
-                c.Id,
-                new AccountNo(accountNo),
-                new Iban(iban),
-                NovaBank.Core.Enums.Currency.TRY,
-                new NovaBank.Core.ValueObjects.Money(0m, NovaBank.Core.Enums.Currency.TRY),
-                0m
-            );
-            db.Accounts.Add(newAcc);
-            await db.SaveChangesAsync();
-
-            var dto = new CustomerResponse(c.Id, c.NationalId.Value, c.FirstName, c.LastName, c.Email, c.Phone, c.IsActive);
-            return TypedResults.Created($"/api/v1/customers/{c.Id}", dto);
+            return TypedResults.Created($"/api/v1/customers/{result.Value!.Id}", result.Value);
         });
 
-        g.MapGet("/{id:guid}", async Task<Results<Ok<CustomerResponse>, NotFound>> (Guid id, BankDbContext db) =>
+        g.MapGet("/{id:guid}", async Task<Results<Ok<CustomerResponse>, NotFound>> (Guid id, ICustomersService service) =>
         {
-            var c = await db.Customers.FindAsync(id);
-            if (c is null) return TypedResults.NotFound();
-            var dto = new CustomerResponse(c.Id, c.NationalId.Value, c.FirstName, c.LastName, c.Email, c.Phone, c.IsActive);
-            return TypedResults.Ok(dto);
+            var result = await service.GetByIdAsync(id);
+            if (!result.IsSuccess)
+                return TypedResults.NotFound();
+
+            return TypedResults.Ok(result.Value!);
         });
 
-        g.MapGet("/", async Task<Ok<List<CustomerResponse>>> (BankDbContext db) =>
+        g.MapGet("/", async Task<Ok<List<CustomerResponse>>> (ICustomersService service) =>
         {
-            var customers = await db.Customers.ToListAsync();
-            var dtos = customers.Select(c => new CustomerResponse(c.Id, c.NationalId.Value, c.FirstName, c.LastName, c.Email, c.Phone, c.IsActive)).ToList();
-            return TypedResults.Ok(dtos);
+            var result = await service.GetAllAsync();
+            return TypedResults.Ok(result.Value ?? new List<CustomerResponse>());
         });
 
-        g.MapPost("/login", async Task<Results<Ok<CustomerResponse>, BadRequest<string>>> (LoginRequest req, BankDbContext db) =>
+        g.MapPost("/login", async Task<Results<Ok<LoginResponse>, BadRequest<string>>> (LoginRequest req, ICustomersService service) =>
         {
-            var c = await db.Customers.FirstOrDefaultAsync(x => x.NationalId == new NationalId(req.NationalId));
-            if (c is null) return TypedResults.BadRequest("Kullanıcı bulunamadı.");
-            if (!c.VerifyPassword(req.Password)) return TypedResults.BadRequest("Şifre hatalı.");
-            if (!c.IsActive) return TypedResults.BadRequest("Hesap deaktif.");
-            return TypedResults.Ok(new CustomerResponse(c.Id, c.NationalId.Value, c.FirstName, c.LastName, c.Email, c.Phone, c.IsActive));
+            var result = await service.LoginAsync(req);
+            if (!result.IsSuccess)
+                return TypedResults.BadRequest(result.ErrorMessage ?? "Giriş başarısız.");
+
+            return TypedResults.Ok(result.Value!);
         });
 
         return app;

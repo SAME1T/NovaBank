@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using NovaBank.Core.Abstractions;
+using NovaBank.Core.Enums;
 using NovaBank.Core.ValueObjects;
 
 namespace NovaBank.Core.Entities
@@ -18,8 +19,9 @@ namespace NovaBank.Core.Entities
         public string Phone { get; private set; }
         public string PasswordHash { get; private set; }
         public bool IsActive { get; private set; } = true;
+        public UserRole Role { get; private set; } = UserRole.Customer;
 
-        public Customer(NationalId nationalId, string firstName, string lastName, string email, string phone, string password)
+        public Customer(NationalId nationalId, string firstName, string lastName, string email, string phone, string password, UserRole role = UserRole.Customer)
         {
             NationalId = nationalId ?? throw new ArgumentNullException(nameof(nationalId));
             FirstName = ValidateName(firstName, nameof(firstName));
@@ -27,6 +29,7 @@ namespace NovaBank.Core.Entities
             Email = ValidateEmail(email);
             Phone = phone ?? string.Empty;
             PasswordHash = HashPassword(password);
+            Role = role;
         }
 
         /// <summary>Deactivate the customer.</summary>

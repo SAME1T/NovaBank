@@ -16,8 +16,9 @@ namespace NovaBank.Core.Entities
         public Currency Currency { get; private set; }
         public Money Balance { get; private set; }
         public decimal OverdraftLimit { get; private set; }
+        public AccountStatus Status { get; private set; } = AccountStatus.Active;
 
-        public Account(Guid customerId, AccountNo accountNo, Iban iban, Currency currency, Money openingBalance, decimal overdraftLimit)
+        public Account(Guid customerId, AccountNo accountNo, Iban iban, Currency currency, Money openingBalance, decimal overdraftLimit, AccountStatus status = AccountStatus.Active)
         {
             if (overdraftLimit < 0) throw new ArgumentException("OverdraftLimit cannot be negative.", nameof(overdraftLimit));
             if (openingBalance is null) throw new ArgumentNullException(nameof(openingBalance));
@@ -28,6 +29,38 @@ namespace NovaBank.Core.Entities
             Currency = currency;
             Balance = openingBalance;
             OverdraftLimit = overdraftLimit;
+            Status = status;
+        }
+
+        /// <summary>Updates the overdraft limit.</summary>
+        public void UpdateOverdraftLimit(decimal newLimit)
+        {
+            if (newLimit < 0) throw new ArgumentException("OverdraftLimit cannot be negative.", nameof(newLimit));
+            OverdraftLimit = newLimit;
+            TouchUpdated();
+        }
+
+        /// <summary>Freezes the account.</summary>
+        public void Freeze()
+        {
+            if (Status == AccountStatus.Closed) throw new InvalidOperationException("Closed account cannot be frozen.");
+            Status = AccountStatus.Frozen;
+            TouchUpdated();
+        }
+
+        /// <summary>Activates the account.</summary>
+        public void Activate()
+        {
+            if (Status == AccountStatus.Closed) throw new InvalidOperationException("Closed account cannot be activated.");
+            Status = AccountStatus.Active;
+            TouchUpdated();
+        }
+
+        /// <summary>Closes the account.</summary>
+        public void Close()
+        {
+            Status = AccountStatus.Closed;
+            TouchUpdated();
         }
 
         /// <summary>Deposits the specified amount. Requires same currency.</summary>

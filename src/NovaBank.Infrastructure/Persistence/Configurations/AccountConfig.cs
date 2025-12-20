@@ -43,6 +43,10 @@ public sealed class AccountConfig : IEntityTypeConfiguration<Account>
         });
 
         b.Property(x => x.OverdraftLimit).HasColumnType("decimal(18,2)").HasDefaultValue(0);
+        b.Property(x => x.Status)
+            .HasConversion<int>()
+            .HasDefaultValue(AccountStatus.Active)
+            .IsRequired();
 
         b.HasIndex(x => x.AccountNo).IsUnique();
         b.HasOne<Customer>().WithMany().HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Cascade);

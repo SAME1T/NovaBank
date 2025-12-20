@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Net.Http;
 using System.Xml.Linq;
-using NovaBank.WinForms.Dto;
+using NovaBank.Contracts.ExchangeRates;
 
 namespace NovaBank.WinForms.Services;
 

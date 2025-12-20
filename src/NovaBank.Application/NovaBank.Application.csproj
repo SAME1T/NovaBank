@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NovaBank.Core\NovaBank.Core.csproj" />
+    <ProjectReference Include="..\NovaBank.Contracts\NovaBank.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

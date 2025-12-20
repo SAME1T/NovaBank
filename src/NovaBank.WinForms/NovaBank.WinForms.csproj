@@ -17,12 +17,13 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.10" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.10" />
-    <PackageReference Include="DevExpress.Win.Design" Version="24.1.3" />
-    <PackageReference Include="DevExpress.Win" Version="24.1.3" />
+    <PackageReference Include="DevExpress.Win.Design" Version="25.1.3" />
+    <PackageReference Include="DevExpress.Win" Version="25.1.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NovaBank.Api\NovaBank.Api.csproj" />
+    <ProjectReference Include="..\NovaBank.Core\NovaBank.Core.csproj" />
+    <ProjectReference Include="..\NovaBank.Contracts\NovaBank.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

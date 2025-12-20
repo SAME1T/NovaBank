@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using NovaBank.Core.Entities;
+using NovaBank.Core.Enums;
 using NovaBank.Infrastructure.Persistence.Converters;
 
 namespace NovaBank.Infrastructure.Persistence.Configurations;
@@ -22,6 +23,10 @@ public sealed class CustomerConfig : IEntityTypeConfiguration<Customer>
         b.Property(x => x.Phone).HasMaxLength(20);
         b.Property(x => x.PasswordHash).HasMaxLength(500).IsRequired();
         b.Property(x => x.IsActive).HasDefaultValue(true);
+        b.Property(x => x.Role)
+            .HasConversion<int>()
+            .HasDefaultValue(UserRole.Customer)
+            .IsRequired();
 
         b.Property(x => x.NationalId)
             .HasConversion(new NationalIdConverter())

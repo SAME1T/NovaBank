@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore;
-using NovaBank.Api.Contracts;
-using NovaBank.Core.Entities;
-using NovaBank.Core.Enums;
-using NovaBank.Core.ValueObjects;
-using NovaBank.Infrastructure.Persistence;
+using NovaBank.Application.Common.Errors;
+using NovaBank.Application.Transactions;
+using NovaBank.Contracts.Transactions;
 
 namespace NovaBank.Api.Endpoints;
 public static class TransactionsEndpoints
@@ -13,44 +10,41 @@ public static class TransactionsEndpoints
     {
         var g = app.MapGroup("/api/v1/transactions");
 
-        g.MapPost("/deposit", async Task<Results<Ok<TransactionResponse>, BadRequest<string>, NotFound>>
-        (DepositRequest req, BankDbContext db) =>
+        g.MapPost("/deposit", async Task<Results<Ok<TransactionResponse>, BadRequest<string>, NotFound, Conflict<string>>>
+        (DepositRequest req, ITransactionsService service, CancellationToken ct) =>
         {
-            var acc = await db.Accounts.FirstOrDefaultAsync(a => a.Id == req.AccountId);
-            if (acc is null) return TypedResults.NotFound();
-            if (acc.Currency != req.Currency) return TypedResults.BadRequest("Para birimi uyuşmuyor.");
+            var result = await service.DepositAsync(req, ct);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorCode switch
+                {
+                    ErrorCodes.AccountNotFound => TypedResults.NotFound(),
+                    ErrorCodes.CurrencyMismatch => TypedResults.Conflict(result.ErrorMessage ?? "Para birimi uyuşmuyor."),
+                    ErrorCodes.InvalidAmount => TypedResults.BadRequest(result.ErrorMessage ?? "Geçersiz tutar."),
+                    _ => TypedResults.BadRequest(result.ErrorMessage ?? "Para yatırma işlemi başarısız.")
+                };
+            }
 
-            acc.Deposit(new Money(req.Amount, req.Currency));
-            var tx = new Transaction(
-                acc.Id,
-                new Money(req.Amount, req.Currency),
-                TransactionDirection.Credit,
-                req.Description ?? string.Empty
-            );
-            db.Transactions.Add(tx);
-            await db.SaveChangesAsync();
-
-            return TypedResults.Ok(new TransactionResponse(tx.Id, tx.AccountId, tx.Amount.Amount, tx.Amount.Currency.ToString(), tx.Direction.ToString(), tx.Description, tx.ReferenceCode, tx.CreatedAt));
+            return TypedResults.Ok(result.Value!);
         });
 
-        g.MapPost("/withdraw", async Task<Results<Ok<TransactionResponse>, BadRequest<string>, NotFound>>
-        (WithdrawRequest req, BankDbContext db) =>
+        g.MapPost("/withdraw", async Task<Results<Ok<TransactionResponse>, BadRequest<string>, NotFound, Conflict<string>>>
+        (WithdrawRequest req, ITransactionsService service, CancellationToken ct) =>
         {
-            var acc = await db.Accounts.FirstOrDefaultAsync(a => a.Id == req.AccountId);
-            if (acc is null) return TypedResults.NotFound();
-            if (acc.Currency != req.Currency) return TypedResults.BadRequest("Para birimi uyuşmuyor.");
-            if (!acc.CanWithdraw(new Money(req.Amount, req.Currency))) return TypedResults.BadRequest("Bakiye + ek hesap limiti yetersiz.");
+            var result = await service.WithdrawAsync(req, ct);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorCode switch
+                {
+                    ErrorCodes.AccountNotFound => TypedResults.NotFound(),
+                    ErrorCodes.InsufficientFunds => TypedResults.BadRequest(result.ErrorMessage ?? "Yetersiz bakiye."),
+                    ErrorCodes.CurrencyMismatch => TypedResults.Conflict(result.ErrorMessage ?? "Para birimi uyuşmuyor."),
+                    ErrorCodes.InvalidAmount => TypedResults.BadRequest(result.ErrorMessage ?? "Geçersiz tutar."),
+                    _ => TypedResults.BadRequest(result.ErrorMessage ?? "Para çekme işlemi başarısız.")
+                };
+            }
 
-            acc.Withdraw(new Money(req.Amount, req.Currency));
-            var tx = new Transaction(
-                acc.Id,
-                new Money(req.Amount, req.Currency),
-                TransactionDirection.Debit,
-                req.Description ?? string.Empty
-            );
-            db.Transactions.Add(tx);
-            await db.SaveChangesAsync();
-            return TypedResults.Ok(new TransactionResponse(tx.Id, tx.AccountId, tx.Amount.Amount, tx.Amount.Currency.ToString(), tx.Direction.ToString(), tx.Description, tx.ReferenceCode, tx.CreatedAt));
+            return TypedResults.Ok(result.Value!);
         });
 
         return app;

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
-using NovaBank.Api.Contracts;
+using NovaBank.Contracts.PaymentOrders;
 using NovaBank.Core.Entities;
 using NovaBank.Core.Enums;
 using NovaBank.Core.ValueObjects;

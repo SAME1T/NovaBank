@@ -1,6 +1,5 @@
 using NovaBank.WinForms.Services;
-using NovaBank.WinForms.Dto;
-using NovaBank.Api.Contracts;
+using NovaBank.Contracts.Customers;
 using DevExpress.XtraEditors;
 
 namespace NovaBank.WinForms;
@@ -20,9 +19,15 @@ public partial class FrmAuth : XtraForm
             if (string.IsNullOrWhiteSpace(password)) { XtraMessageBox.Show("Şifre giriniz.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             
             var loginReq = new LoginRequest(tc, password);
-            var cust = await _api.PostAsync<LoginRequest, CustomerResponse>("/api/v1/customers/login", loginReq);
-            if (cust is null) { XtraMessageBox.Show("Giriş başarısız!\nTC Kimlik No veya şifre hatalı.", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
-            LoggedInCustomerId = cust.Id;
+            var loginResp = await _api.PostAsync<LoginRequest, LoginResponse>("/api/v1/customers/login", loginReq);
+            if (loginResp is null) { XtraMessageBox.Show("Giriş başarısız!\nTC Kimlik No veya şifre hatalı.", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
+            LoggedInCustomerId = loginResp.CustomerId;
+            
+            // Session'a kaydet
+            Session.CurrentCustomerId = loginResp.CustomerId;
+            Session.CurrentCustomerName = loginResp.FullName;
+            Session.CurrentRole = loginResp.Role;
+            
             DialogResult = DialogResult.OK; Close();
         }
         catch (Exception ex) { XtraMessageBox.Show($"Giriş sırasında hata oluştu:\n{ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error); }

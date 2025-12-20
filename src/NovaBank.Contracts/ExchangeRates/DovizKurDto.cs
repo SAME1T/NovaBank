@@ -1,4 +1,4 @@
-namespace NovaBank.WinForms.Dto;
+namespace NovaBank.Contracts.ExchangeRates;
 
 public class DovizKurDto
 {

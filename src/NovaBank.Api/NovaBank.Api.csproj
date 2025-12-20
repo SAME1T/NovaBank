@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NovaBank.Application\NovaBank.Application.csproj" />
+    <ProjectReference Include="..\NovaBank.Contracts\NovaBank.Contracts.csproj" />
     <ProjectReference Include="..\NovaBank.Infrastructure\NovaBank.Infrastructure.csproj" />
   </ItemGroup>
 

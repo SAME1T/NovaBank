@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\NovaBank.Application\NovaBank.Application.csproj" />
     <ProjectReference Include="..\NovaBank.Core\NovaBank.Core.csproj" />
   </ItemGroup>
 
