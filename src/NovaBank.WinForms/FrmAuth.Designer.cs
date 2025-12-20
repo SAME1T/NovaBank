@@ -65,7 +65,7 @@ partial class FrmAuth
             Location = new Point(30, 25), 
             Size = new Size(500, 50), 
             Text = "🏦 NovaBank'a Hoş Geldiniz", 
-            Appearance = { Font = new Font("Segoe UI", 22, FontStyle.Bold), ForeColor = Color.White }
+            Appearance = { Font = new Font("Segoe UI", 22, FontStyle.Bold), ForeColor = Color.Black }
         };
         pnlLoginHeader.Controls.Add(lblLoginTitle);
         

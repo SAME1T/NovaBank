@@ -130,6 +130,32 @@ public partial class FrmMain : XtraForm
                 if (gridAccountsView.Columns["CustomerId"] != null) gridAccountsView.Columns["CustomerId"].Visible = false;
                 if (gridAccountsView.Columns["AccountNo"] != null) gridAccountsView.Columns["AccountNo"].Visible = false;
                 
+                // Kolon genişliklerini ayarla
+                if (gridAccountsView.Columns["Iban"] != null)
+                {
+                    gridAccountsView.Columns["Iban"].Width = 300;
+                    gridAccountsView.Columns["Iban"].Caption = "IBAN";
+                }
+                if (gridAccountsView.Columns["Currency"] != null)
+                {
+                    gridAccountsView.Columns["Currency"].Width = 100;
+                    gridAccountsView.Columns["Currency"].Caption = "Para Birimi";
+                }
+                if (gridAccountsView.Columns["Balance"] != null)
+                {
+                    gridAccountsView.Columns["Balance"].Width = 200;
+                    gridAccountsView.Columns["Balance"].Caption = "Bakiye";
+                    gridAccountsView.Columns["Balance"].DisplayFormat.FormatType = DevExpress.Utils.FormatType.Numeric;
+                    gridAccountsView.Columns["Balance"].DisplayFormat.FormatString = "N2";
+                }
+                if (gridAccountsView.Columns["OverdraftLimit"] != null)
+                {
+                    gridAccountsView.Columns["OverdraftLimit"].Width = 180;
+                    gridAccountsView.Columns["OverdraftLimit"].Caption = "Ek Hesap Limiti";
+                    gridAccountsView.Columns["OverdraftLimit"].DisplayFormat.FormatType = DevExpress.Utils.FormatType.Numeric;
+                    gridAccountsView.Columns["OverdraftLimit"].DisplayFormat.FormatString = "N2";
+                }
+                
                 // Toplam bakiye hesapla
                 var totalBalance = list.Sum(a => a.Balance);
                 lblTotalBalance.Text = $"💰 Toplam Bakiye: {totalBalance:N2} TL";
@@ -451,6 +477,40 @@ public partial class FrmMain : XtraForm
             var stmt = await _api.GetAsync<AccountStatementResponse>(url);
             if (stmt is null) { XtraMessageBox.Show("Kayıt bulunamadı"); return; }
             gridStatement.DataSource = stmt.Items.ToList();
+            
+            // Kolon genişliklerini ayarla
+            if (gridStatementView.Columns["Date"] != null)
+            {
+                gridStatementView.Columns["Date"].Width = 150;
+                gridStatementView.Columns["Date"].Caption = "Tarih";
+                gridStatementView.Columns["Date"].DisplayFormat.FormatType = DevExpress.Utils.FormatType.DateTime;
+                gridStatementView.Columns["Date"].DisplayFormat.FormatString = "dd.MM.yyyy HH:mm";
+            }
+            if (gridStatementView.Columns["Description"] != null)
+            {
+                gridStatementView.Columns["Description"].Width = 400;
+                gridStatementView.Columns["Description"].Caption = "Açıklama";
+            }
+            if (gridStatementView.Columns["Amount"] != null)
+            {
+                gridStatementView.Columns["Amount"].Width = 200;
+                gridStatementView.Columns["Amount"].Caption = "Tutar";
+                gridStatementView.Columns["Amount"].DisplayFormat.FormatType = DevExpress.Utils.FormatType.Numeric;
+                gridStatementView.Columns["Amount"].DisplayFormat.FormatString = "N2";
+            }
+            if (gridStatementView.Columns["Balance"] != null)
+            {
+                gridStatementView.Columns["Balance"].Width = 200;
+                gridStatementView.Columns["Balance"].Caption = "Bakiye";
+                gridStatementView.Columns["Balance"].DisplayFormat.FormatType = DevExpress.Utils.FormatType.Numeric;
+                gridStatementView.Columns["Balance"].DisplayFormat.FormatString = "N2";
+            }
+            if (gridStatementView.Columns["Direction"] != null)
+            {
+                gridStatementView.Columns["Direction"].Width = 120;
+                gridStatementView.Columns["Direction"].Caption = "Yön";
+            }
+            
             lblTotals.Text = $"Açılış: {stmt.OpeningBalance}  Alacak: {stmt.TotalCredit}  Borç: {stmt.TotalDebit}  Kapanış: {stmt.ClosingBalance}";
         }
         catch (Exception ex) { XtraMessageBox.Show(ex.Message, "Error"); }
@@ -572,51 +632,64 @@ public partial class FrmMain : XtraForm
             // DataGridView'e bağla
             dgvRates.DataSource = rates;
             
+            // AutoSizeColumnsMode'u None yap (manuel genişlik kontrolü için)
+            dgvRates.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
+            
             // Kolon başlıklarını düzenle ve formatla
             if (dgvRates.Columns["CurrencyCode"] != null)
             {
                 dgvRates.Columns["CurrencyCode"].HeaderText = "Kod";
-                dgvRates.Columns["CurrencyCode"].Width = 80;
+                dgvRates.Columns["CurrencyCode"].Width = 100;
+                dgvRates.Columns["CurrencyCode"].MinimumWidth = 80;
             }
             if (dgvRates.Columns["CurrencyName"] != null)
             {
                 dgvRates.Columns["CurrencyName"].HeaderText = "Döviz";
-                dgvRates.Columns["CurrencyName"].Width = 200;
+                dgvRates.Columns["CurrencyName"].Width = 250;
+                dgvRates.Columns["CurrencyName"].MinimumWidth = 200;
             }
             if (dgvRates.Columns["Unit"] != null)
             {
                 dgvRates.Columns["Unit"].HeaderText = "Birim";
-                dgvRates.Columns["Unit"].Width = 60;
+                dgvRates.Columns["Unit"].Width = 80;
+                dgvRates.Columns["Unit"].MinimumWidth = 60;
                 dgvRates.Columns["Unit"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
             }
             if (dgvRates.Columns["ForexBuying"] != null)
             {
                 dgvRates.Columns["ForexBuying"].HeaderText = "Döviz Alış";
-                dgvRates.Columns["ForexBuying"].Width = 120;
+                dgvRates.Columns["ForexBuying"].Width = 180;
+                dgvRates.Columns["ForexBuying"].MinimumWidth = 150;
                 dgvRates.Columns["ForexBuying"].DefaultCellStyle.Format = "N4";
                 dgvRates.Columns["ForexBuying"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
             }
             if (dgvRates.Columns["ForexSelling"] != null)
             {
                 dgvRates.Columns["ForexSelling"].HeaderText = "Döviz Satış";
-                dgvRates.Columns["ForexSelling"].Width = 120;
+                dgvRates.Columns["ForexSelling"].Width = 180;
+                dgvRates.Columns["ForexSelling"].MinimumWidth = 150;
                 dgvRates.Columns["ForexSelling"].DefaultCellStyle.Format = "N4";
                 dgvRates.Columns["ForexSelling"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
             }
             if (dgvRates.Columns["BanknoteBuying"] != null)
             {
                 dgvRates.Columns["BanknoteBuying"].HeaderText = "Efektif Alış";
-                dgvRates.Columns["BanknoteBuying"].Width = 120;
+                dgvRates.Columns["BanknoteBuying"].Width = 180;
+                dgvRates.Columns["BanknoteBuying"].MinimumWidth = 150;
                 dgvRates.Columns["BanknoteBuying"].DefaultCellStyle.Format = "N4";
                 dgvRates.Columns["BanknoteBuying"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
             }
             if (dgvRates.Columns["BanknoteSelling"] != null)
             {
                 dgvRates.Columns["BanknoteSelling"].HeaderText = "Efektif Satış";
-                dgvRates.Columns["BanknoteSelling"].Width = 120;
+                dgvRates.Columns["BanknoteSelling"].Width = 180;
+                dgvRates.Columns["BanknoteSelling"].MinimumWidth = 150;
                 dgvRates.Columns["BanknoteSelling"].DefaultCellStyle.Format = "N4";
                 dgvRates.Columns["BanknoteSelling"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
             }
+            
+            // Başlık yazılarının tam görünmesi için yüksekliği ayarla
+            dgvRates.ColumnHeadersHeight = 40;
         }
         catch (Exception ex)
         {

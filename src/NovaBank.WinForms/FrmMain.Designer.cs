@@ -106,29 +106,32 @@ partial class FrmMain
             Location = new Point(20, 20), 
             Size = new Size(1240, 160),
             Dock = DockStyle.None,
-            Appearance = { BackColor = Color.FromArgb(25, 118, 210), BorderColor = Color.FromArgb(25, 118, 210) }
+            Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 230, 230) }
         };
         
         lblWelcome = new LabelControl() 
         { 
             Location = new Point(30, 25), 
-            Size = new Size(600, 35), 
+            Size = new Size(1000, 35), 
             Text = "👋 Hoş Geldiniz", 
-            Appearance = { Font = new Font("Segoe UI", 18, FontStyle.Bold), ForeColor = Color.White }
+            Appearance = { Font = new Font("Segoe UI", 18, FontStyle.Bold), ForeColor = Color.FromArgb(25, 118, 210) },
+            AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None
         };
         lblTotalBalance = new LabelControl() 
         { 
             Location = new Point(30, 65), 
-            Size = new Size(500, 35), 
+            Size = new Size(800, 35), 
             Text = "💰 Toplam Bakiye: 0,00 TL", 
-            Appearance = { Font = new Font("Segoe UI", 16, FontStyle.Bold), ForeColor = Color.White }
+            Appearance = { Font = new Font("Segoe UI", 16, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) },
+            AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None
         };
         lblAccountCount = new LabelControl() 
         { 
             Location = new Point(30, 105), 
-            Size = new Size(400, 25), 
+            Size = new Size(600, 25), 
             Text = "📊 Hesap Sayısı: 0", 
-            Appearance = { Font = new Font("Segoe UI", 11), ForeColor = Color.FromArgb(230, 230, 230) }
+            Appearance = { Font = new Font("Segoe UI", 11), ForeColor = Color.FromArgb(100, 100, 100) },
+            AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None
         };
         
         // Hesap oluşturma paneli - Modern Design
@@ -428,9 +431,10 @@ partial class FrmMain
         lblSenderBind = new LabelControl() 
         { 
             Location = new Point(440, 87), 
-            Size = new Size(500, 30), 
+            Size = new Size(700, 30), 
             Text = "📤 Hesap seçin", 
-            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(100, 100, 100) }
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(100, 100, 100) },
+            AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None
         };
         
         var lblIban = new LabelControl() 
@@ -453,9 +457,10 @@ partial class FrmMain
         lblRecipientName = new LabelControl() 
         { 
             Location = new Point(390, 160), 
-            Size = new Size(400, 30), 
+            Size = new Size(600, 30), 
             Text = "", 
-            Appearance = { Font = new Font("Segoe UI", 10.5F, FontStyle.Bold), ForeColor = Color.FromArgb(76, 175, 80) }
+            Appearance = { Font = new Font("Segoe UI", 10.5F, FontStyle.Bold), ForeColor = Color.FromArgb(76, 175, 80) },
+            AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None
         };
         
         var lblAmount = new LabelControl() 
@@ -727,9 +732,10 @@ partial class FrmMain
         lblExchangeInfo = new LabelControl()
         {
             Location = new Point(25, 55),
-            Size = new Size(800, 25),
+            Size = new Size(1000, 25),
             Text = "Yükleniyor...",
-            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Regular), ForeColor = Color.FromArgb(100, 100, 100) }
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Regular), ForeColor = Color.FromArgb(100, 100, 100) },
+            AutoSizeMode = DevExpress.XtraEditors.LabelAutoSizeMode.None
         };
         
         btnRefreshRates = new SimpleButton()
@@ -751,7 +757,7 @@ partial class FrmMain
         dgvRates = new DataGridView()
         {
             Dock = DockStyle.Fill,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None,
             ReadOnly = true,
             AllowUserToAddRows = false,
             AllowUserToDeleteRows = false,
@@ -766,8 +772,10 @@ partial class FrmMain
                 BackColor = Color.FromArgb(25, 118, 210),
                 ForeColor = Color.White,
                 Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                Alignment = DataGridViewContentAlignment.MiddleCenter
+                Alignment = DataGridViewContentAlignment.MiddleCenter,
+                WrapMode = DataGridViewTriState.False
             },
+            ColumnHeadersHeight = 40,
             DefaultCellStyle = new DataGridViewCellStyle()
             {
                 Padding = new Padding(5),
