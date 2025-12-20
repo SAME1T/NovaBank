@@ -1,39 +1,51 @@
-﻿namespace NovaBank.WinForms;
+﻿using DevExpress.XtraEditors;
+using DevExpress.XtraTab;
+using DevExpress.XtraGrid;
+using DevExpress.XtraGrid.Views.Grid;
+using DevExpress.XtraBars;
+using NovaBank.Api.Contracts;
+
+namespace NovaBank.WinForms;
 
 partial class FrmMain
 {
     private System.ComponentModel.IContainer components = null;
-    private TabControl tabs;
-    private TabPage tabMyAccounts, tabDw, tabTransfer, tabReports, tabSettings;
+    private XtraTabControl tabs;
+    private XtraTabPage tabMyAccounts, tabDw, tabTransfer, tabReports, tabSettings, tabExchangeRates;
     // My Accounts controls
-    private TextBox txtAccCustomerId, txtAccountNo, txtOverdraft;
-    private ComboBox cmbCurrency;
-    private Button btnCreateAccount;
-    private DataGridView gridAccounts;
-    private Label lblWelcome, lblTotalBalance, lblAccountCount;
-    private Panel pnlAccountSummary;
+    private TextEdit txtAccCustomerId, txtAccountNo, txtOverdraft;
+    private ComboBoxEdit cmbCurrency;
+    private SimpleButton btnCreateAccount;
+    private GridControl gridAccounts;
+    private GridView gridAccountsView;
+    private LabelControl lblWelcome, lblTotalBalance, lblAccountCount;
+    private PanelControl pnlAccountSummary;
     // Deposit/Withdraw
-    private TextBox txtDepositAmount, txtDepositDesc, txtWithdrawAmount, txtWithdrawDesc;
-    private ComboBox cmbDwCurrency;
-    private Button btnDeposit, btnWithdraw;
+    private TextEdit txtDepositAmount, txtDepositDesc, txtWithdrawAmount, txtWithdrawDesc;
+    private ComboBoxEdit cmbDwCurrency;
+    private SimpleButton btnDeposit, btnWithdraw;
     // Transfer
-    private TextBox txtToId, txtAmount, txtTransDesc, txtToIban;
-    private ComboBox cmbTransCurrency;
-    private Button btnInternalTransfer, btnExternalTransfer;
-    private Label lblSenderBind, lblRecipientName;
+    private TextEdit txtToId, txtAmount, txtTransDesc, txtToIban;
+    private ComboBoxEdit cmbTransCurrency, cmbTransferAccount;
+    private SimpleButton btnInternalTransfer, btnExternalTransfer;
+    private LabelControl lblSenderBind, lblRecipientName;
     // Reports
-    private TextBox txtStmtAccountId;
-    private DateTimePicker dtFrom, dtTo;
-    private Button btnGetStatement;
-    private DataGridView gridStatement;
-    private Label lblTotals;
-    // Menu
-    private MenuStrip menuStrip;
-    private ToolStripMenuItem mnuFile, mnuLogout;
+    private TextEdit txtStmtAccountId;
+    private DateEdit dtFrom, dtTo;
+    private SimpleButton btnGetStatement;
+    private GridControl gridStatement;
+    private GridView gridStatementView;
+    private LabelControl lblTotals;
+    // Status
     private StatusStrip statusStrip;
     private ToolStripStatusLabel lblStatus;
+    // Exchange Rates
+    private DataGridView dgvRates;
+    private PanelControl pnlExchangeTop;
+    private LabelControl lblExchangeInfo;
+    private SimpleButton btnRefreshRates;
     // Settings/Profile
-    private Label lblProfName, lblProfNationalId, lblProfEmail, lblProfPhone;
+    private LabelControl lblProfName, lblProfNationalId, lblProfEmail, lblProfPhone;
 
     protected override void Dispose(bool disposing)
     {
@@ -45,186 +57,735 @@ partial class FrmMain
     {
         this.components = new System.ComponentModel.Container();
         
-        // Menu
-        this.menuStrip = new MenuStrip();
-        this.mnuFile = new ToolStripMenuItem("Dosya");
-        this.mnuLogout = new ToolStripMenuItem("Çıkış Yap");
-        this.mnuFile.DropDownItems.Add(this.mnuLogout);
-        this.menuStrip.Items.Add(this.mnuFile);
-        this.mnuLogout.Click += MnuLogout_Click;
-        this.mnuLogout.Visible = false; // Çıkış profil sekmesine taşındı
-        
-        // Status Bar
+        // Status Bar - Modern Design
         this.statusStrip = new StatusStrip();
-        this.lblStatus = new ToolStripStatusLabel("NovaBank - Güvenli Bankacılık");
+        this.statusStrip.BackColor = Color.FromArgb(25, 118, 210);
+        this.statusStrip.ForeColor = Color.White;
+        this.lblStatus = new ToolStripStatusLabel("🔒 NovaBank - Güvenli Dijital Bankacılık");
+        this.lblStatus.ForeColor = Color.White;
+        this.lblStatus.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
         this.statusStrip.Items.Add(this.lblStatus);
         
-        this.tabs = new TabControl();
-        this.tabMyAccounts = new TabPage("Hesaplarım");
-        this.tabDw = new TabPage("Para İşlemleri");
-        this.tabTransfer = new TabPage("Transfer");
-        this.tabReports = new TabPage("Ekstreler");
-        this.tabSettings = new TabPage("Ayarlar / Profil");
-        this.tabs.TabPages.AddRange(new TabPage[]{tabMyAccounts, tabDw, tabTransfer, tabReports, tabSettings});
+        this.tabs = new XtraTabControl();
+        this.tabMyAccounts = new XtraTabPage();
+        this.tabDw = new XtraTabPage();
+        this.tabTransfer = new XtraTabPage();
+        this.tabReports = new XtraTabPage();
+        this.tabExchangeRates = new XtraTabPage();
+        this.tabSettings = new XtraTabPage();
+        
+        this.tabMyAccounts.Text = "Hesaplarım";
+        this.tabDw.Text = "Para İşlemleri";
+        this.tabTransfer.Text = "Transfer";
+        this.tabReports.Text = "Ekstreler";
+        this.tabExchangeRates.Text = "Döviz Kurları";
+        this.tabSettings.Text = "Ayarlar / Profil";
+        
+        this.tabs.TabPages.AddRange(new XtraTabPage[] { tabMyAccounts, tabDw, tabTransfer, tabReports, tabExchangeRates, tabSettings });
         this.tabs.Dock = DockStyle.Fill;
+        this.tabs.HeaderLocation = DevExpress.XtraTab.TabHeaderLocation.Top;
+        this.tabs.AppearancePage.Header.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        this.tabs.AppearancePage.HeaderActive.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        this.tabs.AppearancePage.HeaderActive.ForeColor = Color.FromArgb(25, 118, 210);
+        this.tabs.AppearancePage.Header.ForeColor = Color.FromArgb(100, 100, 100);
+        this.tabs.LookAndFeel.UseDefaultLookAndFeel = false;
+        this.tabs.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
         
         this.Controls.Add(this.tabs);
-        this.Controls.Add(this.menuStrip);
         this.Controls.Add(this.statusStrip);
         
         this.Text = "NovaBank - Güvenli Bankacılık";
-        this.Width = 1200; this.Height = 800;
+        this.Width = 1300; 
+        this.Height = 850;
         this.StartPosition = FormStartPosition.CenterScreen;
-        this.BackColor = Color.FromArgb(240, 248, 255);
+        this.WindowState = FormWindowState.Maximized;
 
-        // My Accounts - Modern Bank Design
-        pnlAccountSummary = new Panel() { Left=20, Top=20, Width=1140, Height=140, BackColor=Color.White, BorderStyle=BorderStyle.None };
-        pnlAccountSummary.Paint += (s, e) => {
-            var rect = new Rectangle(0, 0, pnlAccountSummary.Width - 1, pnlAccountSummary.Height - 1);
-            e.Graphics.DrawRectangle(new Pen(Color.FromArgb(220, 220, 220), 1), rect);
+        // My Accounts - Modern Digital Banking Design
+        pnlAccountSummary = new PanelControl() 
+        { 
+            Location = new Point(20, 20), 
+            Size = new Size(1240, 160),
+            Dock = DockStyle.None,
+            Appearance = { BackColor = Color.FromArgb(25, 118, 210), BorderColor = Color.FromArgb(25, 118, 210) }
         };
         
-        lblWelcome = new Label() { Left=30, Top=20, Width=500, Height=30, Text="Hoş Geldiniz", Font=new Font("Segoe UI", 16, FontStyle.Bold), ForeColor=Color.FromArgb(25, 118, 210) };
-        lblTotalBalance = new Label() { Left=30, Top=55, Width=400, Height=25, Text="Toplam Bakiye: 0,00 TL", Font=new Font("Segoe UI", 14, FontStyle.Bold), ForeColor=Color.FromArgb(76, 175, 80) };
-        lblAccountCount = new Label() { Left=30, Top=85, Width=300, Height=20, Text="Hesap Sayısı: 0", Font=new Font("Segoe UI", 10), ForeColor=Color.Gray };
-        
-        // Hesap oluşturma paneli
-        var pnlCreateAccount = new Panel() { Left=20, Top=180, Width=1140, Height=80, BackColor=Color.FromArgb(248, 249, 250), BorderStyle=BorderStyle.None };
-        pnlCreateAccount.Paint += (s, e) => {
-            var rect = new Rectangle(0, 0, pnlCreateAccount.Width - 1, pnlCreateAccount.Height - 1);
-            e.Graphics.DrawRectangle(new Pen(Color.FromArgb(220, 220, 220), 1), rect);
+        lblWelcome = new LabelControl() 
+        { 
+            Location = new Point(30, 25), 
+            Size = new Size(600, 35), 
+            Text = "👋 Hoş Geldiniz", 
+            Appearance = { Font = new Font("Segoe UI", 18, FontStyle.Bold), ForeColor = Color.White }
+        };
+        lblTotalBalance = new LabelControl() 
+        { 
+            Location = new Point(30, 65), 
+            Size = new Size(500, 35), 
+            Text = "💰 Toplam Bakiye: 0,00 TL", 
+            Appearance = { Font = new Font("Segoe UI", 16, FontStyle.Bold), ForeColor = Color.White }
+        };
+        lblAccountCount = new LabelControl() 
+        { 
+            Location = new Point(30, 105), 
+            Size = new Size(400, 25), 
+            Text = "📊 Hesap Sayısı: 0", 
+            Appearance = { Font = new Font("Segoe UI", 11), ForeColor = Color.FromArgb(230, 230, 230) }
         };
         
-        var lblCreateAccount = new Label() { Left=20, Top=15, Width=200, Height=25, Text="Yeni Hesap Aç", Font=new Font("Segoe UI", 12, FontStyle.Bold), ForeColor=Color.FromArgb(25, 118, 210) };
+        // Hesap oluşturma paneli - Modern Design
+        var pnlCreateAccount = new PanelControl() 
+        { 
+            Location = new Point(20, 200), 
+            Size = new Size(1240, 140),
+            Dock = DockStyle.None,
+            Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 230, 230) }
+        };
         
-        txtAccCustomerId = new TextBox(){ Left=20, Top=45, Width=120, PlaceholderText="Müşteri No", BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle, Visible=false };
-        txtAccountNo = new TextBox(){ Left=150, Top=160, Width=120, PlaceholderText="Hesap No", BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle, Visible=false };
-        cmbCurrency = new ComboBox(){ Left=150, Top=45, Width=100, DropDownStyle=ComboBoxStyle.DropDownList, BackColor=Color.White };
-        txtOverdraft = new TextBox(){ Left=260, Top=45, Width=100, PlaceholderText="Ek Hesap Limiti", BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
-        btnCreateAccount = new Button(){ Left=370, Top=43, Width=120, Height=30, Text="Yeni Hesap Aç", BackColor=Color.FromArgb(25, 118, 210), ForeColor=Color.White, FlatStyle=FlatStyle.Flat, Font=new Font("Segoe UI", 9, FontStyle.Bold) };
+        var lblCreateAccount = new LabelControl() 
+        { 
+            Location = new Point(25, 20), 
+            Size = new Size(350, 32), 
+            Text = "💳 Yeni Hesap Aç", 
+            Appearance = { Font = new Font("Segoe UI", 15, FontStyle.Bold), ForeColor = Color.FromArgb(25, 118, 210) }
+        };
+        
+        var lblCreateInfo = new LabelControl()
+        {
+            Location = new Point(25, 52),
+            Size = new Size(700, 22),
+            Text = "Para birimi seçin ve ek hesap limiti belirleyin. Hesap numarası ve IBAN otomatik oluşturulacaktır.",
+            Appearance = { Font = new Font("Segoe UI", 9.5F), ForeColor = Color.FromArgb(100, 100, 100) }
+        };
+        
+        txtAccCustomerId = new TextEdit() { Location = new Point(25, 85), Size = new Size(120, 30), Visible = false };
+        
+        var lblCreateCurrency = new LabelControl() 
+        { 
+            Location = new Point(25, 85), 
+            Size = new Size(130, 22), 
+            Text = "Para Birimi:", 
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        cmbCurrency = new ComboBoxEdit() 
+        { 
+            Location = new Point(25, 107), 
+            Size = new Size(160, 38)
+        };
+        cmbCurrency.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
+        cmbCurrency.Properties.Appearance.Font = new Font("Segoe UI", 10.5F);
+        cmbCurrency.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        
+        var lblOverdraft = new LabelControl() 
+        { 
+            Location = new Point(210, 85), 
+            Size = new Size(200, 22), 
+            Text = "Ek Hesap Limiti (TL):", 
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        txtOverdraft = new TextEdit() 
+        { 
+            Location = new Point(210, 107), 
+            Size = new Size(200, 38)
+        };
+        txtOverdraft.Properties.NullValuePrompt = "0,00";
+        txtOverdraft.Properties.NullValuePromptShowForEmptyValue = true;
+        txtOverdraft.Properties.Mask.MaskType = DevExpress.XtraEditors.Mask.MaskType.Numeric;
+        txtOverdraft.Properties.Mask.EditMask = "n2";
+        txtOverdraft.Properties.Mask.UseMaskAsDisplayFormat = true;
+        txtOverdraft.Properties.Appearance.Font = new Font("Segoe UI", 10.5F);
+        txtOverdraft.Properties.Appearance.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
+        txtOverdraft.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        
+        btnCreateAccount = new SimpleButton() 
+        { 
+            Location = new Point(430, 105), 
+            Size = new Size(220, 40), 
+            Text = "✓ Hesap Oluştur",
+            Appearance = { Font = new Font("Segoe UI", 11.5F, FontStyle.Bold), ForeColor = Color.White },
+            AppearanceHovered = { ForeColor = Color.White },
+            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
+        };
+        btnCreateAccount.Appearance.BackColor = Color.FromArgb(76, 175, 80);
+        btnCreateAccount.AppearanceHovered.BackColor = Color.FromArgb(69, 160, 73);
+        btnCreateAccount.AppearancePressed.BackColor = Color.FromArgb(56, 142, 60);
         btnCreateAccount.Click += btnCreateAccount_Click;
         
-        gridAccounts = new DataGridView(){ Left=20, Top=280, Width=1140, Height=400, ReadOnly=true, AutoSizeColumnsMode=DataGridViewAutoSizeColumnsMode.Fill, 
-            BackColor=Color.White, BorderStyle=BorderStyle.None, GridColor=Color.LightGray, 
-            RowHeadersVisible=false, SelectionMode=DataGridViewSelectionMode.FullRowSelect, AllowUserToAddRows=false };
-        gridAccounts.CellDoubleClick += GridAccounts_CellDoubleClick;
-        gridAccounts.EnableHeadersVisualStyles = false;
-        gridAccounts.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(25, 118, 210);
-        gridAccounts.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-        gridAccounts.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10, FontStyle.Bold);
-        gridAccounts.ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-        gridAccounts.DefaultCellStyle.Font = new Font("Segoe UI", 9);
-        gridAccounts.DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-        gridAccounts.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(248, 249, 250);
+        gridAccounts = new GridControl();
+        gridAccountsView = new GridView();
+        gridAccounts.MainView = gridAccountsView;
+        gridAccounts.Location = new Point(20, 360);
+        gridAccounts.Size = new Size(1240, 420);
+        gridAccountsView.OptionsBehavior.Editable = false;
+        gridAccountsView.OptionsSelection.MultiSelect = false;
+        gridAccountsView.OptionsView.ShowGroupPanel = false;
+        gridAccountsView.OptionsView.EnableAppearanceEvenRow = true;
+        gridAccountsView.OptionsView.EnableAppearanceOddRow = true;
+        gridAccountsView.Appearance.EvenRow.BackColor = Color.FromArgb(250, 250, 250);
+        gridAccountsView.Appearance.OddRow.BackColor = Color.White;
+        gridAccountsView.Appearance.HeaderPanel.BackColor = Color.FromArgb(25, 118, 210);
+        gridAccountsView.Appearance.HeaderPanel.ForeColor = Color.White;
+        gridAccountsView.Appearance.HeaderPanel.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        gridAccountsView.Appearance.Row.Font = new Font("Segoe UI", 9.5F);
+        gridAccountsView.Appearance.SelectedRow.BackColor = Color.FromArgb(230, 240, 255);
+        gridAccountsView.DoubleClick += GridAccounts_CellDoubleClick;
+        gridAccountsView.SelectionChanged += GridAccounts_SelectionChanged;
         
-        // Hesap numarası kolonunu gizle
-        gridAccounts.DataBindingComplete += (s, e) => {
-            if (gridAccounts.Columns.Contains("AccountNo"))
-                gridAccounts.Columns["AccountNo"].Visible = false;
-            if (gridAccounts.Columns.Contains("Id"))
-                gridAccounts.Columns["Id"].Visible = false;
-            if (gridAccounts.Columns.Contains("CustomerId"))
-                gridAccounts.Columns["CustomerId"].Visible = false;
-        };
-        
-        pnlAccountSummary.Controls.AddRange(new Control[]{lblWelcome, lblTotalBalance, lblAccountCount});
-        pnlCreateAccount.Controls.AddRange(new Control[]{lblCreateAccount, txtAccCustomerId, cmbCurrency, txtOverdraft, btnCreateAccount});
-        tabMyAccounts.Controls.AddRange(new Control[]{pnlAccountSummary, pnlCreateAccount, gridAccounts});
+        pnlAccountSummary.Controls.AddRange(new Control[] { lblWelcome, lblTotalBalance, lblAccountCount });
+        pnlCreateAccount.Controls.AddRange(new Control[] { lblCreateAccount, lblCreateInfo, txtAccCustomerId, lblCreateCurrency, cmbCurrency, lblOverdraft, txtOverdraft, btnCreateAccount });
+        tabMyAccounts.Controls.AddRange(new Control[] { pnlAccountSummary, pnlCreateAccount, gridAccounts });
 
         // Deposit/Withdraw - Modern Design
-        var pnlDeposit = new Panel() { Left=20, Top=20, Width=560, Height=220, BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
-        var lblDeposit = new Label() { Left=15, Top=15, Width=200, Height=25, Text="Para Yatırma", Font=new Font("Segoe UI", 12, FontStyle.Bold), ForeColor=Color.FromArgb(25, 118, 210) };
-        var lblDepInfo = new Label(){ Left=15, Top=50, Width=350, Height=20, Text="Seçili hesaba yatırılacak.", ForeColor=Color.Gray };
-        cmbDwCurrency = new ComboBox(){ Left=15, Top=80, Width=120, DropDownStyle=ComboBoxStyle.DropDownList, BackColor=Color.White };
-        txtDepositAmount = new TextBox(){ Left=145, Top=80, Width=140, PlaceholderText="Tutar", BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
-        txtDepositDesc = new TextBox(){ Left=15, Top=115, Width=270, PlaceholderText="Açıklama", BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
-        btnDeposit = new Button(){ Left=15, Top=155, Width=140, Height=40, Text="Para Yatır", BackColor=Color.FromArgb(76, 175, 80), ForeColor=Color.White, FlatStyle=FlatStyle.Flat, Font=new Font("Segoe UI", 9, FontStyle.Bold) };
+        var pnlDeposit = new PanelControl() 
+        { 
+            Location = new Point(20, 20), 
+            Size = new Size(600, 280),
+            Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 230, 230) }
+        };
+        var lblDeposit = new LabelControl() 
+        { 
+            Location = new Point(20, 20), 
+            Size = new Size(250, 30), 
+            Text = "💰 Para Yatırma", 
+            Appearance = { Font = new Font("Segoe UI", 14, FontStyle.Bold), ForeColor = Color.FromArgb(76, 175, 80) }
+        };
+        var lblDepInfo = new LabelControl() 
+        { 
+            Location = new Point(20, 55), 
+            Size = new Size(500, 22), 
+            Text = "Seçili hesaba para yatırın", 
+            Appearance = { Font = new Font("Segoe UI", 9.5F), ForeColor = Color.FromArgb(100, 100, 100) }
+        };
+        var lblDepCurrency = new LabelControl()
+        {
+            Location = new Point(20, 90),
+            Size = new Size(100, 22),
+            Text = "Para Birimi:",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        cmbDwCurrency = new ComboBoxEdit() 
+        { 
+            Location = new Point(20, 112), 
+            Size = new Size(150, 38)
+        };
+        cmbDwCurrency.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
+        cmbDwCurrency.Properties.Appearance.Font = new Font("Segoe UI", 10.5F);
+        cmbDwCurrency.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        var lblDepAmount = new LabelControl()
+        {
+            Location = new Point(190, 90),
+            Size = new Size(80, 22),
+            Text = "Tutar:",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        txtDepositAmount = new TextEdit() 
+        { 
+            Location = new Point(190, 112), 
+            Size = new Size(180, 38)
+        };
+        txtDepositAmount.Properties.NullValuePrompt = "0,00";
+        txtDepositAmount.Properties.NullValuePromptShowForEmptyValue = true;
+        txtDepositAmount.Properties.Mask.MaskType = DevExpress.XtraEditors.Mask.MaskType.Numeric;
+        txtDepositAmount.Properties.Mask.EditMask = "n2";
+        txtDepositAmount.Properties.Mask.UseMaskAsDisplayFormat = true;
+        txtDepositAmount.Properties.Appearance.Font = new Font("Segoe UI", 10.5F);
+        txtDepositAmount.Properties.Appearance.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
+        txtDepositAmount.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        var lblDepDesc = new LabelControl()
+        {
+            Location = new Point(20, 160),
+            Size = new Size(100, 22),
+            Text = "Açıklama:",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        txtDepositDesc = new TextEdit() 
+        { 
+            Location = new Point(20, 182), 
+            Size = new Size(350, 38)
+        };
+        txtDepositDesc.Properties.NullValuePrompt = "İşlem açıklaması";
+        txtDepositDesc.Properties.NullValuePromptShowForEmptyValue = true;
+        txtDepositDesc.Properties.Appearance.Font = new Font("Segoe UI", 10);
+        txtDepositDesc.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        btnDeposit = new SimpleButton() 
+        { 
+            Location = new Point(20, 235), 
+            Size = new Size(350, 42), 
+            Text = "✓ Para Yatır",
+            Appearance = { Font = new Font("Segoe UI", 11.5F, FontStyle.Bold), ForeColor = Color.White },
+            AppearanceHovered = { ForeColor = Color.White },
+            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
+        };
+        btnDeposit.Appearance.BackColor = Color.FromArgb(76, 175, 80);
+        btnDeposit.AppearanceHovered.BackColor = Color.FromArgb(69, 160, 73);
+        btnDeposit.AppearancePressed.BackColor = Color.FromArgb(56, 142, 60);
         btnDeposit.Click += btnDeposit_Click;
         
-        var pnlWithdraw = new Panel() { Left=600, Top=20, Width=560, Height=220, BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
-        var lblWithdraw = new Label() { Left=15, Top=15, Width=200, Height=25, Text="Para Çekme", Font=new Font("Segoe UI", 12, FontStyle.Bold), ForeColor=Color.FromArgb(25, 118, 210) };
-        txtWithdrawAmount = new TextBox(){ Left=15, Top=80, Width=140, PlaceholderText="Tutar", BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
-        txtWithdrawDesc = new TextBox(){ Left=15, Top=115, Width=270, PlaceholderText="Açıklama", BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
-        btnWithdraw = new Button(){ Left=15, Top=155, Width=140, Height=40, Text="Para Çek", BackColor=Color.FromArgb(244, 67, 54), ForeColor=Color.White, FlatStyle=FlatStyle.Flat, Font=new Font("Segoe UI", 9, FontStyle.Bold) };
+        var pnlWithdraw = new PanelControl() 
+        { 
+            Location = new Point(640, 20), 
+            Size = new Size(600, 280),
+            Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 230, 230) }
+        };
+        var lblWithdraw = new LabelControl() 
+        { 
+            Location = new Point(20, 20), 
+            Size = new Size(250, 30), 
+            Text = "💸 Para Çekme", 
+            Appearance = { Font = new Font("Segoe UI", 14, FontStyle.Bold), ForeColor = Color.FromArgb(244, 67, 54) }
+        };
+        var lblWithdrawInfo = new LabelControl()
+        {
+            Location = new Point(20, 55),
+            Size = new Size(500, 22),
+            Text = "Seçili hesaptan para çekin",
+            Appearance = { Font = new Font("Segoe UI", 9.5F), ForeColor = Color.FromArgb(100, 100, 100) }
+        };
+        var lblWithdrawAmount = new LabelControl()
+        {
+            Location = new Point(20, 90),
+            Size = new Size(80, 22),
+            Text = "Tutar:",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        txtWithdrawAmount = new TextEdit() 
+        { 
+            Location = new Point(20, 112), 
+            Size = new Size(180, 38)
+        };
+        txtWithdrawAmount.Properties.NullValuePrompt = "0,00";
+        txtWithdrawAmount.Properties.NullValuePromptShowForEmptyValue = true;
+        txtWithdrawAmount.Properties.Mask.MaskType = DevExpress.XtraEditors.Mask.MaskType.Numeric;
+        txtWithdrawAmount.Properties.Mask.EditMask = "n2";
+        txtWithdrawAmount.Properties.Mask.UseMaskAsDisplayFormat = true;
+        txtWithdrawAmount.Properties.Appearance.Font = new Font("Segoe UI", 10.5F);
+        txtWithdrawAmount.Properties.Appearance.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
+        txtWithdrawAmount.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        var lblWithdrawDesc = new LabelControl()
+        {
+            Location = new Point(20, 160),
+            Size = new Size(100, 22),
+            Text = "Açıklama:",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        txtWithdrawDesc = new TextEdit() 
+        { 
+            Location = new Point(20, 182), 
+            Size = new Size(350, 38)
+        };
+        txtWithdrawDesc.Properties.NullValuePrompt = "İşlem açıklaması";
+        txtWithdrawDesc.Properties.NullValuePromptShowForEmptyValue = true;
+        txtWithdrawDesc.Properties.Appearance.Font = new Font("Segoe UI", 10);
+        txtWithdrawDesc.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        btnWithdraw = new SimpleButton() 
+        { 
+            Location = new Point(20, 235), 
+            Size = new Size(350, 42), 
+            Text = "✓ Para Çek",
+            Appearance = { Font = new Font("Segoe UI", 11.5F, FontStyle.Bold), ForeColor = Color.White },
+            AppearanceHovered = { ForeColor = Color.White },
+            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
+        };
+        btnWithdraw.Appearance.BackColor = Color.FromArgb(244, 67, 54);
+        btnWithdraw.AppearanceHovered.BackColor = Color.FromArgb(229, 57, 53);
+        btnWithdraw.AppearancePressed.BackColor = Color.FromArgb(211, 47, 47);
         btnWithdraw.Click += btnWithdraw_Click;
         
-        pnlDeposit.Controls.AddRange(new Control[]{lblDeposit, lblDepInfo, cmbDwCurrency, txtDepositAmount, txtDepositDesc, btnDeposit});
-        pnlWithdraw.Controls.AddRange(new Control[]{lblWithdraw, txtWithdrawAmount, txtWithdrawDesc, btnWithdraw});
-        tabDw.Controls.AddRange(new Control[]{pnlDeposit, pnlWithdraw});
+        pnlDeposit.Controls.AddRange(new Control[] { lblDeposit, lblDepInfo, lblDepCurrency, cmbDwCurrency, lblDepAmount, txtDepositAmount, lblDepDesc, txtDepositDesc, btnDeposit });
+        pnlWithdraw.Controls.AddRange(new Control[] { lblWithdraw, lblWithdrawInfo, lblWithdrawAmount, txtWithdrawAmount, lblWithdrawDesc, txtWithdrawDesc, btnWithdraw });
+        tabDw.Controls.AddRange(new Control[] { pnlDeposit, pnlWithdraw });
 
         // Transfer - Modern Design
-        var pnlTransfer = new Panel() { Left=20, Top=20, Width=1140, Height=300, BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
-        var lblTransfer = new Label() { Left=15, Top=15, Width=200, Height=25, Text="Para Transferi", Font=new Font("Segoe UI", 12, FontStyle.Bold), ForeColor=Color.FromArgb(25, 118, 210) };
+        var pnlTransfer = new PanelControl() 
+        { 
+            Location = new Point(20, 20), 
+            Size = new Size(1240, 380),
+            Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 230, 230) }
+        };
+        var lblTransfer = new LabelControl() 
+        { 
+            Location = new Point(25, 25), 
+            Size = new Size(300, 32), 
+            Text = "💸 Para Transferi", 
+            Appearance = { Font = new Font("Segoe UI", 15, FontStyle.Bold), ForeColor = Color.FromArgb(25, 118, 210) }
+        };
         
-        lblSenderBind = new Label() { Left=15, Top=50, Width=400, Height=20, Text="Gönderen: seçili hesap", Font=new Font("Segoe UI", 9, FontStyle.Italic), ForeColor=Color.Gray };
+        var lblTransferAccount = new LabelControl() 
+        { 
+            Location = new Point(25, 62), 
+            Size = new Size(150, 22), 
+            Text = "Gönderen Hesap:", 
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        cmbTransferAccount = new ComboBoxEdit() 
+        { 
+            Location = new Point(25, 84), 
+            Size = new Size(400, 38)
+        };
+        cmbTransferAccount.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
+        cmbTransferAccount.Properties.Appearance.Font = new Font("Segoe UI", 10.5F);
+        cmbTransferAccount.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        cmbTransferAccount.EditValueChanged += CmbTransferAccount_EditValueChanged;
         
-        var lblIban = new Label() { Left=15, Top=75, Width=100, Height=20, Text="Alıcı IBAN:", Font=new Font("Segoe UI", 9) };
-        txtToIban = new TextBox(){ Left=90, Top=72, Width=240, PlaceholderText="TR00 0000 0000 0000 0000 0000 00", BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
+        lblSenderBind = new LabelControl() 
+        { 
+            Location = new Point(440, 87), 
+            Size = new Size(500, 30), 
+            Text = "📤 Hesap seçin", 
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(100, 100, 100) }
+        };
+        
+        var lblIban = new LabelControl() 
+        { 
+            Location = new Point(25, 135), 
+            Size = new Size(120, 22), 
+            Text = "Alıcı IBAN:", 
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        txtToIban = new TextEdit() 
+        { 
+            Location = new Point(25, 157), 
+            Size = new Size(350, 38)
+        };
+        txtToIban.Properties.NullValuePrompt = "TR00 0000 0000 0000 0000 0000 00";
+        txtToIban.Properties.NullValuePromptShowForEmptyValue = true;
+        txtToIban.Properties.Appearance.Font = new Font("Segoe UI", 10);
+        txtToIban.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
         txtToIban.Leave += TxtToIban_Leave;
-        lblRecipientName = new Label(){ Left=340, Top=75, Width=300, Height=20, Text="", Font=new Font("Segoe UI", 9, FontStyle.Bold), ForeColor=Color.FromArgb(25,118,210)};
+        lblRecipientName = new LabelControl() 
+        { 
+            Location = new Point(390, 160), 
+            Size = new Size(400, 30), 
+            Text = "", 
+            Appearance = { Font = new Font("Segoe UI", 10.5F, FontStyle.Bold), ForeColor = Color.FromArgb(76, 175, 80) }
+        };
         
-        var lblAmount = new Label() { Left=15, Top=110, Width=100, Height=20, Text="Tutar:", Font=new Font("Segoe UI", 9) };
-        txtAmount = new TextBox(){ Left=15, Top=135, Width=150, PlaceholderText="0,00", BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
+        var lblAmount = new LabelControl() 
+        { 
+            Location = new Point(25, 210), 
+            Size = new Size(100, 22), 
+            Text = "Tutar:", 
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        txtAmount = new TextEdit() 
+        { 
+            Location = new Point(25, 232), 
+            Size = new Size(200, 38)
+        };
+        txtAmount.Properties.NullValuePrompt = "0,00";
+        txtAmount.Properties.NullValuePromptShowForEmptyValue = true;
+        txtAmount.Properties.Mask.MaskType = DevExpress.XtraEditors.Mask.MaskType.Numeric;
+        txtAmount.Properties.Mask.EditMask = "n2";
+        txtAmount.Properties.Mask.UseMaskAsDisplayFormat = true;
+        txtAmount.Properties.Appearance.Font = new Font("Segoe UI", 10.5F);
+        txtAmount.Properties.Appearance.TextOptions.HAlignment = DevExpress.Utils.HorzAlignment.Far;
+        txtAmount.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
         
-        var lblCurrency = new Label() { Left=180, Top=110, Width=100, Height=20, Text="Para Birimi:", Font=new Font("Segoe UI", 9) };
-        cmbTransCurrency = new ComboBox(){ Left=180, Top=135, Width=100, DropDownStyle=ComboBoxStyle.DropDownList, BackColor=Color.White };
+        var lblCurrency = new LabelControl() 
+        { 
+            Location = new Point(245, 210), 
+            Size = new Size(120, 22), 
+            Text = "Para Birimi:", 
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        cmbTransCurrency = new ComboBoxEdit() 
+        { 
+            Location = new Point(245, 232), 
+            Size = new Size(140, 38)
+        };
+        cmbTransCurrency.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
+        cmbTransCurrency.Properties.Appearance.Font = new Font("Segoe UI", 10.5F);
+        cmbTransCurrency.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
         
-        var lblDesc = new Label() { Left=295, Top=110, Width=100, Height=20, Text="Açıklama:", Font=new Font("Segoe UI", 9) };
-        txtTransDesc = new TextBox(){ Left=295, Top=135, Width=250, PlaceholderText="Transfer açıklaması", BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
+        var lblDesc = new LabelControl() 
+        { 
+            Location = new Point(405, 210), 
+            Size = new Size(100, 22), 
+            Text = "Açıklama:", 
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        txtTransDesc = new TextEdit() 
+        { 
+            Location = new Point(405, 232), 
+            Size = new Size(350, 38)
+        };
+        txtTransDesc.Properties.NullValuePrompt = "Transfer açıklaması";
+        txtTransDesc.Properties.NullValuePromptShowForEmptyValue = true;
+        txtTransDesc.Properties.Appearance.Font = new Font("Segoe UI", 10);
+        txtTransDesc.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
         
-        btnExternalTransfer = new Button(){ Left=15, Top=180, Width=200, Height=40, Text="Transfer Yap (IBAN)", BackColor=Color.FromArgb(25, 118, 210), ForeColor=Color.White, FlatStyle=FlatStyle.Flat, Font=new Font("Segoe UI", 9, FontStyle.Bold) };
+        btnExternalTransfer = new SimpleButton() 
+        { 
+            Location = new Point(25, 295), 
+            Size = new Size(280, 45), 
+            Text = "✓ Transfer Yap (IBAN)",
+            Appearance = { Font = new Font("Segoe UI", 11.5F, FontStyle.Bold), ForeColor = Color.White },
+            AppearanceHovered = { ForeColor = Color.White },
+            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
+        };
+        btnExternalTransfer.Appearance.BackColor = Color.FromArgb(25, 118, 210);
+        btnExternalTransfer.AppearanceHovered.BackColor = Color.FromArgb(21, 101, 192);
+        btnExternalTransfer.AppearancePressed.BackColor = Color.FromArgb(13, 71, 161);
         btnExternalTransfer.Click += btnExternalTransfer_Click;
         
-        // İç transfer butonunu kaldır, sadece IBAN ile transfer
-        btnInternalTransfer = new Button(){ Left=230, Top=180, Width=200, Height=40, Text="Hesap Seç", BackColor=Color.FromArgb(76, 175, 80), ForeColor=Color.White, FlatStyle=FlatStyle.Flat, Font=new Font("Segoe UI", 9, FontStyle.Bold) };
+        btnInternalTransfer = new SimpleButton() 
+        { 
+            Location = new Point(320, 295), 
+            Size = new Size(200, 45), 
+            Text = "📋 Hesap Seç",
+            Appearance = { Font = new Font("Segoe UI", 11.5F, FontStyle.Bold), ForeColor = Color.White },
+            AppearanceHovered = { ForeColor = Color.White },
+            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
+        };
+        btnInternalTransfer.Appearance.BackColor = Color.FromArgb(156, 39, 176);
+        btnInternalTransfer.AppearanceHovered.BackColor = Color.FromArgb(142, 36, 170);
+        btnInternalTransfer.AppearancePressed.BackColor = Color.FromArgb(123, 31, 162);
         btnInternalTransfer.Click += btnSelectAccount_Click;
         
-        pnlTransfer.Controls.AddRange(new Control[]{lblTransfer, lblSenderBind, lblIban, txtToIban, lblRecipientName, lblAmount, txtAmount, lblCurrency, cmbTransCurrency, lblDesc, txtTransDesc, btnExternalTransfer, btnInternalTransfer});
+        pnlTransfer.Controls.AddRange(new Control[] { lblTransfer, lblTransferAccount, cmbTransferAccount, lblSenderBind, lblIban, txtToIban, lblRecipientName, lblAmount, txtAmount, lblCurrency, cmbTransCurrency, lblDesc, txtTransDesc, btnExternalTransfer, btnInternalTransfer });
         tabTransfer.Controls.Add(pnlTransfer);
 
         // Reports - Modern Design
-        var pnlReports = new Panel() { Left=20, Top=20, Width=1140, Height=100, BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
-        var lblReports = new Label() { Left=15, Top=15, Width=200, Height=25, Text="Hesap Ekstreleri", Font=new Font("Segoe UI", 12, FontStyle.Bold), ForeColor=Color.FromArgb(25, 118, 210) };
+        var pnlReports = new PanelControl() 
+        { 
+            Location = new Point(20, 20), 
+            Size = new Size(1240, 140),
+            Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 230, 230) }
+        };
+        var lblReports = new LabelControl() 
+        { 
+            Location = new Point(25, 25), 
+            Size = new Size(300, 32), 
+            Text = "📄 Hesap Ekstreleri", 
+            Appearance = { Font = new Font("Segoe UI", 15, FontStyle.Bold), ForeColor = Color.FromArgb(25, 118, 210) }
+        };
         
-        var lblAccount = new Label() { Left=15, Top=50, Width=80, Height=20, Text="IBAN:", Font=new Font("Segoe UI", 9) };
-        txtStmtAccountId = new TextBox(){ Left=15, Top=70, Width=200, PlaceholderText="TR00 0000 0000 0000 0000 0000 00", BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
+        var lblAccount = new LabelControl() 
+        { 
+            Location = new Point(25, 70), 
+            Size = new Size(100, 22), 
+            Text = "IBAN:", 
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        txtStmtAccountId = new TextEdit() 
+        { 
+            Location = new Point(25, 92), 
+            Size = new Size(280, 38)
+        };
+        txtStmtAccountId.Properties.NullValuePrompt = "TR00 0000 0000 0000 0000 0000 00";
+        txtStmtAccountId.Properties.NullValuePromptShowForEmptyValue = true;
+        txtStmtAccountId.Properties.Appearance.Font = new Font("Segoe UI", 10);
+        txtStmtAccountId.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
         
-        var lblFromDate = new Label() { Left=150, Top=50, Width=80, Height=20, Text="Başlangıç:", Font=new Font("Segoe UI", 9) };
-        dtFrom = new DateTimePicker(){ Left=150, Top=70, Width=120, Value = DateTime.Today.AddDays(-7), BackColor=Color.White };
+        var lblFromDate = new LabelControl() 
+        { 
+            Location = new Point(325, 70), 
+            Size = new Size(100, 22), 
+            Text = "Başlangıç:", 
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        dtFrom = new DateEdit() 
+        { 
+            Location = new Point(325, 92), 
+            Size = new Size(160, 38),
+            EditValue = DateTime.Today.AddDays(-7)
+        };
+        dtFrom.Properties.Appearance.Font = new Font("Segoe UI", 10);
+        dtFrom.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
         
-        var lblToDate = new Label() { Left=285, Top=50, Width=80, Height=20, Text="Bitiş:", Font=new Font("Segoe UI", 9) };
-        dtTo = new DateTimePicker(){ Left=285, Top=70, Width=120, Value = DateTime.Today, BackColor=Color.White };
+        var lblToDate = new LabelControl() 
+        { 
+            Location = new Point(505, 70), 
+            Size = new Size(80, 22), 
+            Text = "Bitiş:", 
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        dtTo = new DateEdit() 
+        { 
+            Location = new Point(505, 92), 
+            Size = new Size(160, 38),
+            EditValue = DateTime.Today
+        };
+        dtTo.Properties.Appearance.Font = new Font("Segoe UI", 10);
+        dtTo.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
         
-        btnGetStatement = new Button(){ Left=420, Top=68, Width=150, Height=25, Text="Ekstre Getir", BackColor=Color.FromArgb(25, 118, 210), ForeColor=Color.White, FlatStyle=FlatStyle.Flat, Font=new Font("Segoe UI", 9, FontStyle.Bold) };
+        btnGetStatement = new SimpleButton() 
+        { 
+            Location = new Point(685, 90), 
+            Size = new Size(220, 40), 
+            Text = "📊 Ekstre Getir",
+            Appearance = { Font = new Font("Segoe UI", 11.5F, FontStyle.Bold), ForeColor = Color.White },
+            AppearanceHovered = { ForeColor = Color.White },
+            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
+        };
+        btnGetStatement.Appearance.BackColor = Color.FromArgb(255, 152, 0);
+        btnGetStatement.AppearanceHovered.BackColor = Color.FromArgb(245, 124, 0);
+        btnGetStatement.AppearancePressed.BackColor = Color.FromArgb(230, 81, 0);
         btnGetStatement.Click += btnGetStatement_Click;
         
-        gridStatement = new DataGridView(){ Left=20, Top=140, Width=1140, Height=400, ReadOnly=true, AutoSizeColumnsMode=DataGridViewAutoSizeColumnsMode.Fill, 
-            BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle, GridColor=Color.LightGray, 
-            RowHeadersVisible=false, SelectionMode=DataGridViewSelectionMode.FullRowSelect, AllowUserToAddRows=false };
-        gridStatement.EnableHeadersVisualStyles = false;
-        gridStatement.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(25, 118, 210);
-        gridStatement.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
-        gridStatement.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9, FontStyle.Bold);
+        gridStatement = new GridControl();
+        gridStatementView = new GridView();
+        gridStatement.MainView = gridStatementView;
+        gridStatement.Location = new Point(20, 180);
+        gridStatement.Size = new Size(1240, 400);
+        gridStatementView.OptionsBehavior.Editable = false;
+        gridStatementView.OptionsSelection.MultiSelect = false;
+        gridStatementView.OptionsView.ShowGroupPanel = false;
+        gridStatementView.OptionsView.EnableAppearanceEvenRow = true;
+        gridStatementView.OptionsView.EnableAppearanceOddRow = true;
+        gridStatementView.Appearance.EvenRow.BackColor = Color.FromArgb(250, 250, 250);
+        gridStatementView.Appearance.OddRow.BackColor = Color.White;
+        gridStatementView.Appearance.HeaderPanel.BackColor = Color.FromArgb(25, 118, 210);
+        gridStatementView.Appearance.HeaderPanel.ForeColor = Color.White;
+        gridStatementView.Appearance.HeaderPanel.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        gridStatementView.Appearance.Row.Font = new Font("Segoe UI", 9.5F);
+        gridStatementView.Appearance.SelectedRow.BackColor = Color.FromArgb(230, 240, 255);
         
-        lblTotals = new Label(){ Left=20, Top=560, Width=1140, Height=30, Text="Toplamlar", Font=new Font("Segoe UI", 10, FontStyle.Bold), ForeColor=Color.FromArgb(25, 118, 210), TextAlign=ContentAlignment.MiddleCenter };
+        lblTotals = new LabelControl() 
+        { 
+            Location = new Point(20, 600), 
+            Size = new Size(1240, 35), 
+            Text = "Toplamlar", 
+            Appearance = { Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = Color.FromArgb(25, 118, 210), TextOptions = { HAlignment = DevExpress.Utils.HorzAlignment.Center } }
+        };
         
-        pnlReports.Controls.AddRange(new Control[]{lblReports, lblAccount, txtStmtAccountId, lblFromDate, dtFrom, lblToDate, dtTo, btnGetStatement});
-        tabReports.Controls.AddRange(new Control[]{pnlReports, gridStatement, lblTotals});
+        pnlReports.Controls.AddRange(new Control[] { lblReports, lblAccount, txtStmtAccountId, lblFromDate, dtFrom, lblToDate, dtTo, btnGetStatement });
+        tabReports.Controls.AddRange(new Control[] { pnlReports, gridStatement, lblTotals });
 
-        // Settings / Profile
-        var pnlProfile = new Panel(){ Left=20, Top=20, Width=1140, Height=200, BackColor=Color.White, BorderStyle=BorderStyle.FixedSingle };
-        var lblProfileTitle = new Label(){ Left=15, Top=15, Width=300, Height=25, Text="Profil Bilgileri", Font=new Font("Segoe UI", 12, FontStyle.Bold), ForeColor=Color.FromArgb(25,118,210)};
-        lblProfName = new Label(){ Left=15, Top=60, Width=500, Height=20, Text="Ad Soyad:", Font=new Font("Segoe UI", 10)};
-        lblProfNationalId = new Label(){ Left=15, Top=85, Width=500, Height=20, Text="TCKN:", Font=new Font("Segoe UI", 10)};
-        lblProfEmail = new Label(){ Left=15, Top=110, Width=500, Height=20, Text="E-posta:", Font=new Font("Segoe UI", 10)};
-        lblProfPhone = new Label(){ Left=15, Top=135, Width=500, Height=20, Text="Telefon:", Font=new Font("Segoe UI", 10)};
-        var btnLogout = new Button(){ Left=15, Top=165, Width=140, Height=35, Text="Çıkış Yap", BackColor=Color.FromArgb(244,67,54), ForeColor=Color.White, FlatStyle=FlatStyle.Flat, Font=new Font("Segoe UI", 9, FontStyle.Bold)};
+        // Settings / Profile - Modern Design
+        var pnlProfile = new PanelControl() 
+        { 
+            Location = new Point(20, 20), 
+            Size = new Size(1240, 280),
+            Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 230, 230) }
+        };
+        var lblProfileTitle = new LabelControl() 
+        { 
+            Location = new Point(25, 25), 
+            Size = new Size(350, 35), 
+            Text = "👤 Profil Bilgileri", 
+            Appearance = { Font = new Font("Segoe UI", 15, FontStyle.Bold), ForeColor = Color.FromArgb(25, 118, 210) }
+        };
+        lblProfName = new LabelControl() 
+        { 
+            Location = new Point(25, 75), 
+            Size = new Size(600, 28), 
+            Text = "👤 Ad Soyad:", 
+            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        lblProfNationalId = new LabelControl() 
+        { 
+            Location = new Point(25, 110), 
+            Size = new Size(600, 28), 
+            Text = "🆔 TCKN:", 
+            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        lblProfEmail = new LabelControl() 
+        { 
+            Location = new Point(25, 145), 
+            Size = new Size(600, 28), 
+            Text = "📧 E-posta:", 
+            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        lblProfPhone = new LabelControl() 
+        { 
+            Location = new Point(25, 180), 
+            Size = new Size(600, 28), 
+            Text = "📱 Telefon:", 
+            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+        };
+        var btnLogout = new SimpleButton() 
+        { 
+            Location = new Point(25, 225), 
+            Size = new Size(200, 45), 
+            Text = "🚪 Çıkış Yap",
+            Appearance = { Font = new Font("Segoe UI", 11.5F, FontStyle.Bold), ForeColor = Color.White },
+            AppearanceHovered = { ForeColor = Color.White },
+            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
+        };
+        btnLogout.Appearance.BackColor = Color.FromArgb(244, 67, 54);
+        btnLogout.AppearanceHovered.BackColor = Color.FromArgb(229, 57, 53);
+        btnLogout.AppearancePressed.BackColor = Color.FromArgb(211, 47, 47);
         btnLogout.Click += MnuLogout_Click;
-        pnlProfile.Controls.AddRange(new Control[]{lblProfileTitle, lblProfName, lblProfNationalId, lblProfEmail, lblProfPhone, btnLogout});
+        pnlProfile.Controls.AddRange(new Control[] { lblProfileTitle, lblProfName, lblProfNationalId, lblProfEmail, lblProfPhone, btnLogout });
         tabSettings.Controls.Add(pnlProfile);
+
+        // Döviz Kurları Tab - Modern Design
+        pnlExchangeTop = new PanelControl()
+        {
+            Dock = DockStyle.Top,
+            Height = 90,
+            Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 230, 230) }
+        };
+        
+        var lblExchangeTitle = new LabelControl()
+        {
+            Location = new Point(25, 15),
+            Size = new Size(500, 35),
+            Text = "💱 TCMB Günlük Döviz Kurları",
+            Appearance = { Font = new Font("Segoe UI", 18, FontStyle.Bold), ForeColor = Color.FromArgb(25, 118, 210) }
+        };
+        
+        lblExchangeInfo = new LabelControl()
+        {
+            Location = new Point(25, 55),
+            Size = new Size(800, 25),
+            Text = "Yükleniyor...",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Regular), ForeColor = Color.FromArgb(100, 100, 100) }
+        };
+        
+        btnRefreshRates = new SimpleButton()
+        {
+            Location = new Point(1100, 20),
+            Size = new Size(140, 45),
+            Text = "🔄 Yenile",
+            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.White },
+            AppearanceHovered = { ForeColor = Color.White },
+            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
+        };
+        btnRefreshRates.Appearance.BackColor = Color.FromArgb(76, 175, 80);
+        btnRefreshRates.AppearanceHovered.BackColor = Color.FromArgb(69, 160, 73);
+        btnRefreshRates.AppearancePressed.BackColor = Color.FromArgb(56, 142, 60);
+        btnRefreshRates.Click += BtnRefreshRates_Click;
+        
+        pnlExchangeTop.Controls.AddRange(new Control[] { lblExchangeTitle, lblExchangeInfo, btnRefreshRates });
+        
+        dgvRates = new DataGridView()
+        {
+            Dock = DockStyle.Fill,
+            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+            ReadOnly = true,
+            AllowUserToAddRows = false,
+            AllowUserToDeleteRows = false,
+            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
+            MultiSelect = false,
+            BackgroundColor = Color.White,
+            BorderStyle = BorderStyle.None,
+            GridColor = Color.FromArgb(240, 240, 240),
+            Font = new Font("Segoe UI", 9),
+            ColumnHeadersDefaultCellStyle = new DataGridViewCellStyle()
+            {
+                BackColor = Color.FromArgb(25, 118, 210),
+                ForeColor = Color.White,
+                Font = new Font("Segoe UI", 10, FontStyle.Bold),
+                Alignment = DataGridViewContentAlignment.MiddleCenter
+            },
+            DefaultCellStyle = new DataGridViewCellStyle()
+            {
+                Padding = new Padding(5),
+                SelectionBackColor = Color.FromArgb(230, 240, 255),
+                SelectionForeColor = Color.Black
+            },
+            AlternatingRowsDefaultCellStyle = new DataGridViewCellStyle()
+            {
+                BackColor = Color.FromArgb(250, 250, 250)
+            }
+        };
+        
+        tabExchangeRates.Controls.Add(dgvRates);
+        tabExchangeRates.Controls.Add(pnlExchangeTop);
 
         // Load/Close events
         this.Load += FrmMain_Load;
         this.FormClosing += FrmMain_FormClosing;
+        this.tabs.SelectedPageChanged += Tabs_SelectedPageChanged;
     }
 }

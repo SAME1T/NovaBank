@@ -1,4 +1,7 @@
-﻿using System.Windows.Forms;
+using System.Windows.Forms;
+using DevExpress.LookAndFeel;
+using DevExpress.Skins;
+using DevExpress.UserSkins;
 
 namespace NovaBank.WinForms;
 
@@ -13,6 +16,12 @@ static class Program
         // To customize application configuration such as set high DPI settings or default font,
         // see https://aka.ms/applicationconfiguration.
         ApplicationConfiguration.Initialize();
+        
+        // DevExpress tema ayarları
+        // BonusSkins.Register(); // DevExpress 24+ versiyonlarında gerekli değil
+        SkinManager.EnableFormSkins();
+        UserLookAndFeel.Default.SetSkinStyle("Office 2019 Colorful");
+        
         using var auth = new FrmAuth();
         if (auth.ShowDialog() == DialogResult.OK && auth.LoggedInCustomerId.HasValue)
         {

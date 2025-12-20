@@ -1,13 +1,14 @@
 using NovaBank.WinForms.Services;
 using NovaBank.WinForms.Dto;
 using NovaBank.Api.Contracts;
+using DevExpress.XtraEditors;
 
 namespace NovaBank.WinForms;
-public partial class FrmAuth : Form
+public partial class FrmAuth : XtraForm
 {
     private readonly ApiClient _api = new();
     public Guid? LoggedInCustomerId { get; private set; }
-    public FrmAuth() { InitializeComponent(); this.Text = "NovaBank • Giriş"; }
+    public FrmAuth() { InitializeComponent(); this.Text = "NovaBank • Güvenli Giriş"; }
 
     private async void btnLogin_Click(object sender, EventArgs e)
     {
@@ -15,16 +16,16 @@ public partial class FrmAuth : Form
         {
             var tc = txtLoginTc.Text?.Trim();
             var password = txtLoginPassword.Text?.Trim();
-            if (string.IsNullOrWhiteSpace(tc)) { MessageBox.Show("TC Kimlik No giriniz.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
-            if (string.IsNullOrWhiteSpace(password)) { MessageBox.Show("Şifre giriniz.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (string.IsNullOrWhiteSpace(tc)) { XtraMessageBox.Show("TC Kimlik No giriniz.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (string.IsNullOrWhiteSpace(password)) { XtraMessageBox.Show("Şifre giriniz.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             
             var loginReq = new LoginRequest(tc, password);
             var cust = await _api.PostAsync<LoginRequest, CustomerResponse>("/api/v1/customers/login", loginReq);
-            if (cust is null) { MessageBox.Show("Giriş başarısız!\nTC Kimlik No veya şifre hatalı.", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
+            if (cust is null) { XtraMessageBox.Show("Giriş başarısız!\nTC Kimlik No veya şifre hatalı.", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error); return; }
             LoggedInCustomerId = cust.Id;
             DialogResult = DialogResult.OK; Close();
         }
-        catch (Exception ex) { MessageBox.Show($"Giriş sırasında hata oluştu:\n{ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+        catch (Exception ex) { XtraMessageBox.Show($"Giriş sırasında hata oluştu:\n{ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error); }
     }
 
     private async void btnRegister_Click(object sender, EventArgs e)
@@ -34,9 +35,9 @@ public partial class FrmAuth : Form
             var password = txtRegPassword.Text?.Trim();
             var passwordConfirm = txtRegPasswordConfirm.Text?.Trim();
             
-            if (string.IsNullOrWhiteSpace(password)) { MessageBox.Show("Şifre giriniz.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
-            if (password != passwordConfirm) { MessageBox.Show("Şifreler eşleşmiyor.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
-            if (password.Length < 6) { MessageBox.Show("Şifre en az 6 karakter olmalıdır.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (string.IsNullOrWhiteSpace(password)) { XtraMessageBox.Show("Şifre giriniz.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (password != passwordConfirm) { XtraMessageBox.Show("Şifreler eşleşmiyor.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
+            if (password.Length < 6) { XtraMessageBox.Show("Şifre en az 6 karakter olmalıdır.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning); return; }
             
             var req = new CreateCustomerRequest(
                 txtRegTc.Text?.Trim() ?? "",
@@ -49,27 +50,27 @@ public partial class FrmAuth : Form
             var resp = await _api.PostAsync("/api/v1/customers", req);
             if (!resp.IsSuccessStatusCode)
             {
-                MessageBox.Show(await resp.Content.ReadAsStringAsync(), "Hata");
+                XtraMessageBox.Show(await resp.Content.ReadAsStringAsync(), "Hata");
                 return;
             }
-            MessageBox.Show("Kayıt oluşturuldu!\nGiriş sekmesine TC'nizi yazarak giriş yapınız.", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            XtraMessageBox.Show("Kayıt oluşturuldu!\nGiriş sekmesine TC'nizi yazarak giriş yapınız.", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
             // TC'yi giriş sekmesine taşı
             txtLoginTc.Text = txtRegTc.Text;
             // Giriş sekmesine geç
-            tabControl1.SelectedIndex = 0;
+            tabControl1.SelectedTabPage = tabLogin;
         }
-        catch (Exception ex) { MessageBox.Show(ex.Message, "Hata"); }
+        catch (Exception ex) { XtraMessageBox.Show(ex.Message, "Hata"); }
     }
 
-    private void BtnShowPassword_Click(object? sender, EventArgs e)
+    private void BtnShowPassword_Click(object sender, EventArgs e)
     {
-        txtLoginPassword.UseSystemPasswordChar = !txtLoginPassword.UseSystemPasswordChar;
-        btnShowPassword.Text = txtLoginPassword.UseSystemPasswordChar ? "👁" : "🙈";
+        txtLoginPassword.Properties.UseSystemPasswordChar = !txtLoginPassword.Properties.UseSystemPasswordChar;
+        btnShowPassword.Text = txtLoginPassword.Properties.UseSystemPasswordChar ? "👁" : "🙈";
     }
 
-    private void BtnShowRegPassword_Click(object? sender, EventArgs e)
+    private void BtnShowRegPassword_Click(object sender, EventArgs e)
     {
-        txtRegPassword.UseSystemPasswordChar = !txtRegPassword.UseSystemPasswordChar;
-        btnShowRegPassword.Text = txtRegPassword.UseSystemPasswordChar ? "👁" : "🙈";
+        txtRegPassword.Properties.UseSystemPasswordChar = !txtRegPassword.Properties.UseSystemPasswordChar;
+        btnShowRegPassword.Text = txtRegPassword.Properties.UseSystemPasswordChar ? "👁" : "🙈";
     }
 }

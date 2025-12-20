@@ -1,9 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net9.0-windows</TargetFramework>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
@@ -17,6 +17,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.10" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.10" />
+    <PackageReference Include="DevExpress.Win.Design" Version="24.1.3" />
+    <PackageReference Include="DevExpress.Win" Version="24.1.3" />
   </ItemGroup>
 
   <ItemGroup>
