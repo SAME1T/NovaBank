@@ -19,9 +19,23 @@ public class TransferRepository : ITransferRepository
         // SaveChanges will be handled by UnitOfWork
     }
 
+    public Task UpdateAsync(Transfer entity, CancellationToken ct = default)
+    {
+        _context.Transfers.Update(entity);
+        return Task.CompletedTask;
+    }
+
     public async Task<Transfer?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         return await _context.Transfers.FindAsync(new object[] { id }, ct);
+    }
+
+    public async Task<Transfer?> GetByIdForUpdateAsync(Guid id, CancellationToken ct = default)
+    {
+        // PostgreSQL FOR UPDATE ile satır kilitleme
+        return await _context.Transfers
+            .FromSqlInterpolated($"SELECT * FROM bank_transfers WHERE \"Id\" = {id} FOR UPDATE")
+            .FirstOrDefaultAsync(ct);
     }
 }
 

@@ -15,8 +15,11 @@ namespace NovaBank.Core.Entities
         public TransferChannel Channel { get; private set; }
         public PaymentStatus Status { get; private set; }
         public string? ExternalIban { get; private set; }
+        public Guid? ReversalOfTransferId { get; private set; }
+        public Guid? ReversedByTransferId { get; private set; }
+        public DateTime? ReversedAt { get; private set; }
 
-        public Transfer(Guid fromAccountId, Guid? toAccountId, Money amount, TransferChannel channel, string? externalIban = null)
+        public Transfer(Guid fromAccountId, Guid? toAccountId, Money amount, TransferChannel channel, string? externalIban = null, Guid? reversalOfTransferId = null)
         {
             if (amount is null) throw new ArgumentNullException(nameof(amount));
             if (amount.Amount <= 0) throw new ArgumentException("Amount must be positive.", nameof(amount));
@@ -25,6 +28,7 @@ namespace NovaBank.Core.Entities
             Amount = amount;
             Channel = channel;
             ExternalIban = externalIban;
+            ReversalOfTransferId = reversalOfTransferId;
             Status = PaymentStatus.Executed;
         }
 
@@ -39,6 +43,16 @@ namespace NovaBank.Core.Entities
         public void MarkFailed(string reason)
         {
             Status = PaymentStatus.Failed;
+            TouchUpdated();
+        }
+
+        /// <summary>Marks the transfer as reversed by another transfer.</summary>
+        public void MarkReversed(Guid reversalTransferId, DateTime now)
+        {
+            if (ReversedByTransferId != null)
+                throw new Exceptions.DomainException("Transfer already reversed");
+            ReversedByTransferId = reversalTransferId;
+            ReversedAt = now;
             TouchUpdated();
         }
     }

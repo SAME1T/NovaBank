@@ -57,6 +57,15 @@ partial class FrmMain
     private TextEdit txtAdminOverdraft;
     private ComboBoxEdit cmbAdminStatus;
     private SimpleButton btnAdminUpdateOverdraft, btnAdminUpdateStatus;
+    private CheckEdit chkAdminIsActive;
+    private SimpleButton btnAdminSaveActive, btnAdminResetPassword;
+    // Audit Log
+    private DateEdit dtAuditFrom, dtAuditTo;
+    private TextEdit txtAuditSearch;
+    private ComboBoxEdit cmbAuditAction, cmbAuditSuccess;
+    private SimpleButton btnAuditLoad;
+    private GridControl gridAuditLogs;
+    private GridView gridAuditLogsView;
 
     protected override void Dispose(bool disposing)
     {
@@ -93,9 +102,10 @@ partial class FrmMain
         this.tabSettings.Text = "Ayarlar / Profil";
         
         this.tabAdmin = new XtraTabPage();
-        this.tabAdmin.Text = "Admin";
-        this.tabAdmin.Visible = false; // Sadece admin kullanıcılar için görünür olacak
-        this.tabs.TabPages.AddRange(new XtraTabPage[] { tabMyAccounts, tabDw, tabTransfer, tabReports, tabExchangeRates, tabSettings, tabAdmin });
+        this.tabAdmin.Text = "Yönetim";
+        // tabAdmin sadece admin kullanıcılar için görünür olacak - ApplyRoleBasedUI() ile kontrol edilir
+        // Başlangıçta tab listesine eklenmez, admin login olduğunda eklenecek
+        this.tabs.TabPages.AddRange(new XtraTabPage[] { tabMyAccounts, tabDw, tabTransfer, tabReports, tabExchangeRates, tabSettings });
         this.tabs.Dock = DockStyle.Fill;
         this.tabs.HeaderLocation = DevExpress.XtraTab.TabHeaderLocation.Top;
         this.tabs.AppearancePage.Header.Font = new Font("Segoe UI", 10, FontStyle.Bold);

@@ -39,11 +39,25 @@ namespace NovaBank.Core.Entities
             TouchUpdated();
         }
 
+        /// <summary>Activate the customer.</summary>
+        public void Activate()
+        {
+            IsActive = true;
+            TouchUpdated();
+        }
+
         /// <summary>Update contact information.</summary>
         public void UpdateContact(string email, string phone)
         {
             Email = ValidateEmail(email);
             Phone = phone ?? string.Empty;
+            TouchUpdated();
+        }
+
+        /// <summary>Update password. The password will be hashed before storing.</summary>
+        public void UpdatePassword(string newPassword)
+        {
+            PasswordHash = HashPassword(newPassword);
             TouchUpdated();
         }
 
@@ -62,7 +76,7 @@ namespace NovaBank.Core.Entities
             return v;
         }
 
-        private static string HashPassword(string password)
+        public static string HashPassword(string password)
         {
             if (string.IsNullOrWhiteSpace(password)) throw new ArgumentException("Password is required.", nameof(password));
             using var sha256 = SHA256.Create();

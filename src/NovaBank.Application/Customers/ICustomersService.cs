@@ -9,5 +9,8 @@ public interface ICustomersService
     Task<Result<CustomerResponse>> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Result<List<CustomerResponse>>> GetAllAsync(CancellationToken ct = default);
     Task<Result<LoginResponse>> LoginAsync(LoginRequest request, CancellationToken ct = default);
+    Task<Result<PasswordResetRequestResponse>> RequestPasswordResetAsync(PasswordResetRequest req, CancellationToken ct = default);
+    Task<Result<PasswordResetVerifyResponse>> VerifyPasswordResetAsync(PasswordResetVerifyRequest req, CancellationToken ct = default);
+    Task<Result<PasswordResetCompleteResponse>> CompletePasswordResetAsync(PasswordResetCompleteRequest req, CancellationToken ct = default);
 }
 

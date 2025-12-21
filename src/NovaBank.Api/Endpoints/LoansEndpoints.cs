@@ -11,7 +11,7 @@ public static class LoansEndpoints
 {
     public static IEndpointRouteBuilder MapLoans(this IEndpointRouteBuilder app)
     {
-        var g = app.MapGroup("/api/v1/loans");
+        var g = app.MapGroup("/api/v1/loans").RequireAuthorization("AnyUser");
 
         // Hesaplama
         g.MapPost("/calc", (CalcLoanRequest req) =>

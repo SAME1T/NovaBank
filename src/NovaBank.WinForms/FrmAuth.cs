@@ -27,6 +27,7 @@ public partial class FrmAuth : XtraForm
             Session.CurrentCustomerId = loginResp.CustomerId;
             Session.CurrentCustomerName = loginResp.FullName;
             Session.CurrentRole = loginResp.Role;
+            Session.AccessToken = loginResp.AccessToken;
             
             DialogResult = DialogResult.OK; Close();
         }
@@ -77,5 +78,11 @@ public partial class FrmAuth : XtraForm
     {
         txtRegPassword.Properties.UseSystemPasswordChar = !txtRegPassword.Properties.UseSystemPasswordChar;
         btnShowRegPassword.Text = txtRegPassword.Properties.UseSystemPasswordChar ? "👁" : "🙈";
+    }
+
+    private void BtnForgotPassword_Click(object? sender, EventArgs e)
+    {
+        using var frmForgot = new FrmForgotPassword();
+        frmForgot.ShowDialog();
     }
 }

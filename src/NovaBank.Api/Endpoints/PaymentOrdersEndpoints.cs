@@ -11,7 +11,7 @@ public static class PaymentOrdersEndpoints
 {
     public static IEndpointRouteBuilder MapPaymentOrders(this IEndpointRouteBuilder app)
     {
-        var g = app.MapGroup("/api/v1/payment-orders");
+        var g = app.MapGroup("/api/v1/payment-orders").RequireAuthorization("AnyUser");
 
         g.MapPost("/", async Task<Results<Created<PaymentOrderResponse>, BadRequest<string>, NotFound>>
         (CreatePaymentOrderRequest req, BankDbContext db) =>

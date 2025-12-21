@@ -137,7 +137,20 @@ partial class FrmAuth
         btnLogin.AppearancePressed.BackColor = Color.FromArgb(13, 71, 161);
         btnLogin.Click += btnLogin_Click;
         
-        pnlLoginContent.Controls.AddRange(new Control[] { lblTc, txtLoginTc, lblPassword, txtLoginPassword, btnShowPassword, btnLogin });
+        // Şifremi Unuttum linki
+        var btnForgotPassword = new SimpleButton()
+        {
+            Location = new Point(25, 280),
+            Size = new Size(200, 30),
+            Text = "🔑 Şifremi Unuttum",
+            Appearance = { Font = new Font("Segoe UI", 9), ForeColor = Color.FromArgb(25, 118, 210) },
+            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
+        };
+        btnForgotPassword.Appearance.BackColor = Color.Transparent;
+        btnForgotPassword.AppearanceHovered.BackColor = Color.FromArgb(240, 240, 240);
+        btnForgotPassword.Click += BtnForgotPassword_Click;
+        
+        pnlLoginContent.Controls.AddRange(new Control[] { lblTc, txtLoginTc, lblPassword, txtLoginPassword, btnShowPassword, btnLogin, btnForgotPassword });
         tabLogin.Controls.Add(pnlLoginHeader);
         tabLogin.Controls.Add(pnlLoginContent);
 

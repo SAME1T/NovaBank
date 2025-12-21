@@ -8,7 +8,7 @@ public static class ReportsEndpoints
 {
     public static IEndpointRouteBuilder MapReports(this IEndpointRouteBuilder app)
     {
-        var g = app.MapGroup("/api/v1/reports");
+        var g = app.MapGroup("/api/v1/reports").RequireAuthorization("AnyUser");
 
         g.MapGet("/account-statement", async Task<Results<Ok<AccountStatementResponse>, BadRequest<string>, NotFound>>
         (Guid accountId, DateTime from, DateTime to, IReportsService service) =>

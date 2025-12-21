@@ -8,7 +8,7 @@ public static class TransactionsEndpoints
 {
     public static IEndpointRouteBuilder MapTransactions(this IEndpointRouteBuilder app)
     {
-        var g = app.MapGroup("/api/v1/transactions");
+        var g = app.MapGroup("/api/v1/transactions").RequireAuthorization("AnyUser");
 
         g.MapPost("/deposit", async Task<Results<Ok<TransactionResponse>, BadRequest<string>, NotFound, Conflict<string>>>
         (DepositRequest req, ITransactionsService service, CancellationToken ct) =>
@@ -21,6 +21,8 @@ public static class TransactionsEndpoints
                     ErrorCodes.AccountNotFound => TypedResults.NotFound(),
                     ErrorCodes.CurrencyMismatch => TypedResults.Conflict(result.ErrorMessage ?? "Para birimi uyuşmuyor."),
                     ErrorCodes.InvalidAmount => TypedResults.BadRequest(result.ErrorMessage ?? "Geçersiz tutar."),
+                    ErrorCodes.HesapDondurulmus => TypedResults.Conflict(result.ErrorMessage ?? "Hesap dondurulmuş."),
+                    ErrorCodes.HesapKapali => TypedResults.Conflict(result.ErrorMessage ?? "Hesap kapalı."),
                     _ => TypedResults.BadRequest(result.ErrorMessage ?? "Para yatırma işlemi başarısız.")
                 };
             }
@@ -40,6 +42,8 @@ public static class TransactionsEndpoints
                     ErrorCodes.InsufficientFunds => TypedResults.BadRequest(result.ErrorMessage ?? "Yetersiz bakiye."),
                     ErrorCodes.CurrencyMismatch => TypedResults.Conflict(result.ErrorMessage ?? "Para birimi uyuşmuyor."),
                     ErrorCodes.InvalidAmount => TypedResults.BadRequest(result.ErrorMessage ?? "Geçersiz tutar."),
+                    ErrorCodes.HesapDondurulmus => TypedResults.Conflict(result.ErrorMessage ?? "Hesap dondurulmuş."),
+                    ErrorCodes.HesapKapali => TypedResults.Conflict(result.ErrorMessage ?? "Hesap kapalı."),
                     _ => TypedResults.BadRequest(result.ErrorMessage ?? "Para çekme işlemi başarısız.")
                 };
             }

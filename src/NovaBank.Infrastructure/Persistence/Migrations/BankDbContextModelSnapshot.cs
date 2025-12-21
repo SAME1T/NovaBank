@@ -78,6 +78,80 @@ namespace NovaBank.Infrastructure.Persistence.Migrations
                     b.ToTable("bank_accounts", (string)null);
                 });
 
+            modelBuilder.Entity("NovaBank.Core.Entities.AuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("ActorCustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActorRole")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EntityId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("EntityType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("MetadataJson")
+                        .HasColumnType("text");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<bool>("Success")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Action")
+                        .HasDatabaseName("IX_bank_audit_logs_Action");
+
+                    b.HasIndex("ActorCustomerId")
+                        .HasDatabaseName("IX_bank_audit_logs_ActorCustomerId");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_bank_audit_logs_CreatedAt");
+
+                    b.ToTable("bank_audit_logs", (string)null);
+                });
+
             modelBuilder.Entity("NovaBank.Core.Entities.Card", b =>
                 {
                     b.Property<Guid>("Id")
@@ -236,6 +310,75 @@ namespace NovaBank.Infrastructure.Persistence.Migrations
                     b.ToTable("bank_loans", (string)null);
                 });
 
+            modelBuilder.Entity("NovaBank.Core.Entities.PasswordResetToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("RequestedIp")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("RequestedUserAgent")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("TargetEmail")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("IX_bank_password_reset_tokens_CustomerId");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("IX_bank_password_reset_tokens_ExpiresAt");
+
+                    b.HasIndex("IsUsed")
+                        .HasDatabaseName("IX_bank_password_reset_tokens_IsUsed");
+
+                    b.HasIndex("CustomerId", "IsUsed", "ExpiresAt")
+                        .HasDatabaseName("IX_bank_password_reset_tokens_CustomerId_IsUsed_ExpiresAt");
+
+                    b.ToTable("bank_password_reset_tokens", (string)null);
+                });
+
             modelBuilder.Entity("NovaBank.Core.Entities.PaymentOrder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -348,6 +491,15 @@ namespace NovaBank.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("FromAccountId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ReversalOfTransferId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ReversedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ReversedByTransferId")
+                        .HasColumnType("uuid");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -363,6 +515,13 @@ namespace NovaBank.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ReversalOfTransferId")
+                        .HasDatabaseName("IX_bank_transfers_ReversalOfTransferId");
+
+                    b.HasIndex("ReversedByTransferId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_bank_transfers_ReversedByTransferId");
 
                     b.ToTable("bank_transfers", (string)null);
                 });
@@ -433,6 +592,15 @@ namespace NovaBank.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("Principal")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("NovaBank.Core.Entities.PasswordResetToken", b =>
+                {
+                    b.HasOne("NovaBank.Core.Entities.Customer", null)
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

@@ -15,6 +15,8 @@ public sealed class BankDbContext : DbContext
     public DbSet<Transfer> Transfers => Set<Transfer>();
     public DbSet<PaymentOrder> PaymentOrders => Set<PaymentOrder>();
     public DbSet<Loan> Loans => Set<Loan>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -25,6 +27,8 @@ public sealed class BankDbContext : DbContext
         modelBuilder.ApplyConfiguration(new TransferConfig());
         modelBuilder.ApplyConfiguration(new PaymentOrderConfig());
         modelBuilder.ApplyConfiguration(new LoanConfig());
+        modelBuilder.ApplyConfiguration(new AuditLogConfig());
+        modelBuilder.ApplyConfiguration(new PasswordResetTokenConfig());
         base.OnModelCreating(modelBuilder);
     }
 }

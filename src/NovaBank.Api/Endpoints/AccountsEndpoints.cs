@@ -8,7 +8,7 @@ public static class AccountsEndpoints
 {
     public static IEndpointRouteBuilder MapAccounts(this IEndpointRouteBuilder app)
     {
-        var g = app.MapGroup("/api/v1/accounts");
+        var g = app.MapGroup("/api/v1/accounts").RequireAuthorization("AnyUser");
 
         g.MapPost("/", async Task<Results<Created<AccountResponse>, BadRequest<string>>> (CreateAccountRequest req, IAccountsService service) =>
         {

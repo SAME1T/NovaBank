@@ -5,6 +5,7 @@ using NovaBank.Contracts.Transactions;
 using NovaBank.Contracts.Reports;
 using NovaBank.Contracts.ExchangeRates;
 using NovaBank.Contracts.Admin;
+using NovaBank.Core.Enums;
 using DevExpress.XtraEditors;
 using DevExpress.XtraGrid.Views.Grid;
 using DevExpress.XtraGrid;
@@ -25,7 +26,9 @@ public partial class FrmMain : XtraForm
             Session.CurrentCustomerId = currentCustomerId;
         
         InitializeComponent(); 
-        this.Text = $"NovaBank Client  •  {_api.BaseUrl}" + (Session.CurrentCustomerId.HasValue ? $" • Müşteri: {Session.CurrentCustomerId}" : ""); 
+        var customerInfo = Session.CurrentCustomerId.HasValue ? $" • Müşteri: {Session.CurrentCustomerId}" : "";
+        var roleInfo = Session.IsAdmin ? " • Yönetici" : (Session.CurrentRole == UserRole.Customer ? " • Müşteri" : "");
+        this.Text = $"NovaBank Client  •  {_api.BaseUrl}" + customerInfo + roleInfo; 
     }
 
     private bool TryGuid(string text, out Guid id)
@@ -77,6 +80,30 @@ public partial class FrmMain : XtraForm
         return true;
     }
 
+    private void ApplyRoleBasedUI()
+    {
+        if (tabAdmin == null || tabs == null) return;
+
+        if (Session.IsAdmin)
+        {
+            // Admin ise tab görünür olsun ve "Yönetim" adıyla gösterilsin
+            if (!tabs.TabPages.Contains(tabAdmin))
+            {
+                tabs.TabPages.Add(tabAdmin);
+            }
+            tabAdmin.Text = "Yönetim";
+            tabAdmin.Visible = true;
+        }
+        else
+        {
+            // Customer ise tab'ı koleksiyondan tamamen çıkar
+            if (tabs.TabPages.Contains(tabAdmin))
+            {
+                tabs.TabPages.Remove(tabAdmin);
+            }
+        }
+    }
+
     private async void FrmMain_Load(object sender, EventArgs e)
     {
         cmbCurrency.Properties.Items.AddRange(Enum.GetValues(typeof(NovaBank.Core.Enums.Currency)));
@@ -94,11 +121,8 @@ public partial class FrmMain : XtraForm
             cmbTransCurrency.Enabled = false;
         }
 
-        // Admin tab'ı sadece admin kullanıcılar için göster
-        if (tabAdmin != null)
-        {
-            tabAdmin.Visible = Session.IsAdmin;
-        }
+        // Role-based UI ayarlarını uygula
+        ApplyRoleBasedUI();
 
         // Eğer giriş yapılmışsa müşteri bilgilerini prefill et
         if (Session.CurrentCustomerId.HasValue)
@@ -1057,11 +1081,54 @@ public partial class FrmMain : XtraForm
         gridAdminAccountsView.OptionsSelection.MultiSelect = false;
         gridAdminAccountsView.SelectionChanged += GridAdminAccounts_SelectionChanged;
         
+        // Panel: Müşteri İşlemleri
+        var pnlCustomerActions = new PanelControl()
+        {
+            Location = new Point(20, 530),
+            Size = new Size(600, 100),
+            Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 230, 230) }
+        };
+        
+        chkAdminIsActive = new CheckEdit()
+        {
+            Location = new Point(20, 30),
+            Size = new Size(200, 38),
+            Text = "Müşteri Aktif",
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            ForeColor = Color.FromArgb(60, 60, 60)
+        };
+        
+        btnAdminSaveActive = new SimpleButton()
+        {
+            Location = new Point(240, 30),
+            Size = new Size(150, 38),
+            Text = "✓ Aktiflik Kaydet",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.White },
+            AppearanceHovered = { ForeColor = Color.White }
+        };
+        btnAdminSaveActive.Appearance.BackColor = Color.FromArgb(76, 175, 80);
+        btnAdminSaveActive.Click += BtnAdminSaveActive_Click;
+        
+        btnAdminResetPassword = new SimpleButton()
+        {
+            Location = new Point(400, 30),
+            Size = new Size(150, 38),
+            Text = "Şifre Resetle",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.White },
+            AppearanceHovered = { ForeColor = Color.White }
+        };
+        btnAdminResetPassword.Appearance.BackColor = Color.FromArgb(255, 152, 0);
+        btnAdminResetPassword.Click += BtnAdminResetPassword_Click;
+        
+        pnlCustomerActions.Controls.AddRange(new Control[] { 
+            chkAdminIsActive, btnAdminSaveActive, btnAdminResetPassword 
+        });
+        
         // Panel: Hesap İşlemleri
         var pnlAccountActions = new PanelControl()
         {
-            Location = new Point(20, 530),
-            Size = new Size(1200, 150),
+            Location = new Point(640, 530),
+            Size = new Size(580, 150),
             Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 230, 230) }
         };
         
@@ -1093,7 +1160,7 @@ public partial class FrmMain : XtraForm
         
         var lblStatus = new LabelControl()
         {
-            Location = new Point(420, 20),
+            Location = new Point(20, 90),
             Size = new Size(100, 22),
             Text = "Durum:",
             Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold) }
@@ -1101,7 +1168,7 @@ public partial class FrmMain : XtraForm
         
         cmbAdminStatus = new ComboBoxEdit()
         {
-            Location = new Point(420, 45),
+            Location = new Point(20, 115),
             Size = new Size(200, 38)
         };
         cmbAdminStatus.Properties.Items.AddRange(new[] { "Active", "Frozen", "Closed" });
@@ -1109,7 +1176,7 @@ public partial class FrmMain : XtraForm
         
         btnAdminUpdateStatus = new SimpleButton()
         {
-            Location = new Point(640, 45),
+            Location = new Point(240, 115),
             Size = new Size(150, 38),
             Text = "✓ Durum Güncelle",
             Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.White },
@@ -1123,10 +1190,146 @@ public partial class FrmMain : XtraForm
             lblStatus, cmbAdminStatus, btnAdminUpdateStatus 
         });
         
-        tabAdmin.Controls.AddRange(new Control[] { pnlSearch, gridAdminCustomers, gridAdminAccounts, pnlAccountActions });
+        // Panel: Denetim Kayıtları
+        var pnlAuditLogs = new PanelControl()
+        {
+            Location = new Point(20, 700),
+            Size = new Size(1200, 500),
+            Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 230, 230) }
+        };
+
+        var lblAuditTitle = new LabelControl()
+        {
+            Location = new Point(20, 20),
+            Size = new Size(300, 30),
+            Text = "📋 Denetim Kayıtları",
+            Appearance = { Font = new Font("Segoe UI", 14, FontStyle.Bold), ForeColor = Color.FromArgb(25, 118, 210) }
+        };
+
+        var lblAuditFrom = new LabelControl()
+        {
+            Location = new Point(20, 60),
+            Size = new Size(100, 22),
+            Text = "Başlangıç:",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold) }
+        };
+
+        dtAuditFrom = new DateEdit()
+        {
+            Location = new Point(20, 85),
+            Size = new Size(150, 38),
+            EditValue = DateTime.Today.AddDays(-7)
+        };
+        dtAuditFrom.Properties.Appearance.Font = new Font("Segoe UI", 10);
+
+        var lblAuditTo = new LabelControl()
+        {
+            Location = new Point(190, 60),
+            Size = new Size(80, 22),
+            Text = "Bitiş:",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold) }
+        };
+
+        dtAuditTo = new DateEdit()
+        {
+            Location = new Point(190, 85),
+            Size = new Size(150, 38),
+            EditValue = DateTime.Today
+        };
+        dtAuditTo.Properties.Appearance.Font = new Font("Segoe UI", 10);
+
+        var lblAuditSearch = new LabelControl()
+        {
+            Location = new Point(360, 60),
+            Size = new Size(100, 22),
+            Text = "Arama:",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold) }
+        };
+
+        txtAuditSearch = new TextEdit()
+        {
+            Location = new Point(360, 85),
+            Size = new Size(200, 38),
+            Properties = { NullValuePrompt = "Summary, EntityId, Action..." }
+        };
+
+        var lblAuditAction = new LabelControl()
+        {
+            Location = new Point(580, 60),
+            Size = new Size(80, 22),
+            Text = "Aksiyon:",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold) }
+        };
+
+        cmbAuditAction = new ComboBoxEdit()
+        {
+            Location = new Point(580, 85),
+            Size = new Size(180, 38)
+        };
+        cmbAuditAction.Properties.Items.AddRange(new[] { 
+            "Hepsi", "LoginSuccess", "LoginFailed", "Deposit", "Withdraw", 
+            "TransferInternal", "TransferExternal", "AdminUpdateOverdraft", 
+            "AdminUpdateAccountStatus", "AdminUpdateCustomerActive", "AdminResetCustomerPassword",
+            "PasswordResetRequested", "PasswordResetEmailFailed", "PasswordResetFailed", "PasswordResetCompleted"
+        });
+        cmbAuditAction.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
+        cmbAuditAction.EditValue = "Hepsi"; // Varsayılan değer
+
+        var lblAuditSuccess = new LabelControl()
+        {
+            Location = new Point(780, 60),
+            Size = new Size(80, 22),
+            Text = "Durum:",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold) }
+        };
+
+        cmbAuditSuccess = new ComboBoxEdit()
+        {
+            Location = new Point(780, 85),
+            Size = new Size(120, 38)
+        };
+        cmbAuditSuccess.Properties.Items.AddRange(new[] { "Hepsi", "Başarılı", "Başarısız" });
+        cmbAuditSuccess.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
+        cmbAuditSuccess.EditValue = "Hepsi"; // Varsayılan değer
+
+        btnAuditLoad = new SimpleButton()
+        {
+            Location = new Point(920, 85),
+            Size = new Size(150, 38),
+            Text = "📥 Logları Getir",
+            Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.White },
+            AppearanceHovered = { ForeColor = Color.White }
+        };
+        btnAuditLoad.Appearance.BackColor = Color.FromArgb(25, 118, 210);
+        btnAuditLoad.Click += BtnAuditLoad_Click;
+
+        gridAuditLogs = new GridControl()
+        {
+            Location = new Point(20, 140),
+            Size = new Size(1160, 340)
+        };
+        gridAuditLogsView = new GridView();
+        gridAuditLogs.MainView = gridAuditLogsView;
+        gridAuditLogsView.OptionsBehavior.Editable = false;
+        gridAuditLogsView.OptionsSelection.MultiSelect = false;
+        gridAuditLogsView.DoubleClick += GridAuditLogs_DoubleClick;
+
+        pnlAuditLogs.Controls.AddRange(new Control[] {
+            lblAuditTitle, lblAuditFrom, dtAuditFrom, lblAuditTo, dtAuditTo,
+            lblAuditSearch, txtAuditSearch, lblAuditAction, cmbAuditAction,
+            lblAuditSuccess, cmbAuditSuccess, btnAuditLoad, gridAuditLogs
+        });
+
+        tabAdmin.Controls.AddRange(new Control[] { 
+            pnlSearch, gridAdminCustomers, gridAdminAccounts, pnlCustomerActions, pnlAccountActions, pnlAuditLogs 
+        });
+        
         
         // İlk yükleme: Tüm müşterileri getir
         BtnAdminSearch_Click(null, EventArgs.Empty);
+        
+        // İlk yükleme: Son 7 günün audit loglarını getir
+        BtnAuditLoad_Click(null, EventArgs.Empty);
     }
 
     private async void BtnAdminSearch_Click(object? sender, EventArgs e)
@@ -1146,6 +1349,7 @@ public partial class FrmMain : XtraForm
                     gridAdminCustomersView.Columns["FullName"].Caption = "Ad Soyad";
                     gridAdminCustomersView.Columns["NationalIdMasked"].Caption = "TCKN";
                     gridAdminCustomersView.Columns["Role"].Caption = "Rol";
+                    gridAdminCustomersView.Columns["IsActive"].Caption = "Aktif";
                 }
             }
         }
@@ -1163,6 +1367,10 @@ public partial class FrmMain : XtraForm
             
             var customer = gridAdminCustomersView.GetRow(gridAdminCustomersView.FocusedRowHandle) as NovaBank.Contracts.Admin.CustomerSummaryResponse;
             if (customer == null) return;
+            
+            // Checkbox'ı güncelle
+            if (chkAdminIsActive != null)
+                chkAdminIsActive.Checked = customer.IsActive;
             
             var accounts = await _api.GetCustomerAccountsAsync(customer.CustomerId);
             if (accounts != null && gridAdminAccounts != null)
@@ -1283,6 +1491,186 @@ public partial class FrmMain : XtraForm
                 var errorMsg = await ApiClient.GetErrorMessageAsync(resp);
                 XtraMessageBox.Show($"Hata: {errorMsg}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+        catch (Exception ex)
+        {
+            XtraMessageBox.Show($"Hata: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async void BtnAdminSaveActive_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (gridAdminCustomersView?.FocusedRowHandle < 0)
+            {
+                XtraMessageBox.Show("Lütfen bir müşteri seçin.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            var customer = gridAdminCustomersView.GetRow(gridAdminCustomersView.FocusedRowHandle) as NovaBank.Contracts.Admin.CustomerSummaryResponse;
+            if (customer == null) return;
+            
+            if (chkAdminIsActive == null) return;
+            
+            var resp = await _api.UpdateCustomerActiveAsync(customer.CustomerId, chkAdminIsActive.Checked);
+            if (resp.IsSuccessStatusCode)
+            {
+                XtraMessageBox.Show("Müşteri aktiflik durumu güncellendi.", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                // Müşteri listesini yenile
+                BtnAdminSearch_Click(null, EventArgs.Empty);
+            }
+            else
+            {
+                var errorMsg = await ApiClient.GetErrorMessageAsync(resp);
+                XtraMessageBox.Show($"Hata: {errorMsg}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            XtraMessageBox.Show($"Hata: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async void BtnAdminResetPassword_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (gridAdminCustomersView?.FocusedRowHandle < 0)
+            {
+                XtraMessageBox.Show("Lütfen bir müşteri seçin.", "Uyarı", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            
+            var customer = gridAdminCustomersView.GetRow(gridAdminCustomersView.FocusedRowHandle) as NovaBank.Contracts.Admin.CustomerSummaryResponse;
+            if (customer == null) return;
+            
+            var confirm = XtraMessageBox.Show(
+                $"'{customer.FullName}' müşterisinin şifresini sıfırlamak istediğinize emin misiniz?",
+                "Onay",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+            
+            if (confirm != DialogResult.Yes) return;
+            
+            var result = await _api.ResetCustomerPasswordAsync(customer.CustomerId);
+            if (result != null)
+            {
+                XtraMessageBox.Show(
+                    $"Geçici Şifre: {result.TemporaryPassword}\n\nMüşteriye ilet.",
+                    "Şifre Sıfırlandı",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+            }
+            else
+            {
+                XtraMessageBox.Show("Şifre sıfırlama başarısız.", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            XtraMessageBox.Show($"Hata: {ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private async void BtnAuditLoad_Click(object? sender, EventArgs e)
+    {
+        try
+        {
+            var from = dtAuditFrom?.EditValue as DateTime?;
+            var to = dtAuditTo?.EditValue as DateTime?;
+            var search = txtAuditSearch?.Text?.Trim();
+            
+            // Action mapping: "Hepsi" veya boş ise null
+            var action = cmbAuditAction?.EditValue?.ToString();
+            if (string.IsNullOrWhiteSpace(action) || action == "Hepsi")
+                action = null;
+
+            // Success mapping: "Hepsi" => null, "Başarılı" => true, "Başarısız" => false
+            bool? success = null;
+            var successValue = cmbAuditSuccess?.EditValue?.ToString();
+            if (successValue == "Başarılı")
+                success = true;
+            else if (successValue == "Başarısız")
+                success = false;
+            // "Hepsi" veya null ise success = null kalır
+
+            btnAuditLoad.Enabled = false;
+            this.UseWaitCursor = true;
+            
+            var logs = await _api.GetAuditLogsAsync(from, to, search, action, success, 200);
+            if (logs != null && gridAuditLogs != null && gridAuditLogsView != null)
+            {
+                gridAuditLogs.DataSource = logs;
+                
+                // Kolonları yapılandır (her seferinde yeniden yapılandır)
+                gridAuditLogsView.PopulateColumns();
+                
+                if (gridAuditLogsView.Columns["Id"] != null)
+                    gridAuditLogsView.Columns["Id"].Visible = false;
+                if (gridAuditLogsView.Columns["ActorCustomerId"] != null)
+                    gridAuditLogsView.Columns["ActorCustomerId"].Visible = false;
+                    
+                if (gridAuditLogsView.Columns["CreatedAt"] != null)
+                {
+                    gridAuditLogsView.Columns["CreatedAt"].Caption = "Tarih";
+                    gridAuditLogsView.Columns["CreatedAt"].DisplayFormat.FormatString = "yyyy-MM-dd HH:mm:ss";
+                    gridAuditLogsView.Columns["CreatedAt"].DisplayFormat.FormatType = DevExpress.Utils.FormatType.DateTime;
+                }
+                if (gridAuditLogsView.Columns["ActorRole"] != null)
+                    gridAuditLogsView.Columns["ActorRole"].Caption = "Rol";
+                if (gridAuditLogsView.Columns["Action"] != null)
+                    gridAuditLogsView.Columns["Action"].Caption = "Aksiyon";
+                if (gridAuditLogsView.Columns["EntityType"] != null)
+                    gridAuditLogsView.Columns["EntityType"].Caption = "Varlık Tipi";
+                if (gridAuditLogsView.Columns["EntityId"] != null)
+                    gridAuditLogsView.Columns["EntityId"].Caption = "Varlık ID";
+                if (gridAuditLogsView.Columns["Success"] != null)
+                {
+                    gridAuditLogsView.Columns["Success"].Caption = "Başarılı";
+                }
+                if (gridAuditLogsView.Columns["ErrorCode"] != null)
+                    gridAuditLogsView.Columns["ErrorCode"].Caption = "Hata Kodu";
+                if (gridAuditLogsView.Columns["Summary"] != null)
+                {
+                    gridAuditLogsView.Columns["Summary"].Caption = "Özet";
+                    gridAuditLogsView.Columns["Summary"].Width = 300;
+                }
+                
+                // Grid'i yenile
+                gridAuditLogsView.BestFitColumns();
+            }
+        }
+        catch (Exception ex)
+        {
+            XtraMessageBox.Show($"Denetim kayıtları yüklenirken hata oluştu:\n{ex.Message}", "Hata", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+        finally
+        {
+            btnAuditLoad.Enabled = true;
+            this.UseWaitCursor = false;
+        }
+    }
+
+    private void GridAuditLogs_DoubleClick(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (gridAuditLogsView?.FocusedRowHandle < 0) return;
+
+            var log = gridAuditLogsView.GetRow(gridAuditLogsView.FocusedRowHandle) as AuditLogResponse;
+            if (log == null) return;
+
+            var details = $"Özet: {log.Summary ?? "-"}\n\n" +
+                         $"Varlık ID: {log.EntityId ?? "-"}\n" +
+                         $"Varlık Tipi: {log.EntityType ?? "-"}\n" +
+                         $"Aksiyon: {log.Action}\n" +
+                         $"Rol: {log.ActorRole}\n" +
+                         $"Başarılı: {(log.Success ? "Evet" : "Hayır")}\n" +
+                         $"Hata Kodu: {log.ErrorCode ?? "-"}\n" +
+                         $"Tarih: {log.CreatedAt:yyyy-MM-dd HH:mm:ss}";
+
+            XtraMessageBox.Show(details, "Denetim Kaydı Detayları", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)
         {

@@ -7,5 +7,6 @@ public interface ITransfersService
 {
     Task<Result<TransferResponse>> TransferInternalAsync(TransferInternalRequest request, CancellationToken ct = default);
     Task<Result<TransferResponse>> TransferExternalAsync(TransferExternalRequest request, CancellationToken ct = default);
+    Task<Result<ReverseTransferResponse>> ReverseTransferAsync(ReverseTransferRequest req, CancellationToken ct = default);
 }
 

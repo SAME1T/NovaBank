@@ -11,7 +11,7 @@ public static class CardsEndpoints
 {
     public static IEndpointRouteBuilder MapCards(this IEndpointRouteBuilder app)
     {
-        var g = app.MapGroup("/api/v1/cards");
+        var g = app.MapGroup("/api/v1/cards").RequireAuthorization("AnyUser");
 
         // Kart bas (debit/credit)
         g.MapPost("/", async Task<Results<Created<CardResponse>, BadRequest<string>, NotFound>>

@@ -26,5 +26,17 @@ public sealed class TransferConfig : IEntityTypeConfiguration<Transfer>
         });
 
         b.Property(x => x.ExternalIban).HasMaxLength(34);
+        
+        b.Property(x => x.ReversalOfTransferId);
+        b.Property(x => x.ReversedByTransferId);
+        b.Property(x => x.ReversedAt);
+
+        // Indexes
+        b.HasIndex(x => x.ReversedByTransferId)
+            .IsUnique()
+            .HasDatabaseName("IX_bank_transfers_ReversedByTransferId");
+        
+        b.HasIndex(x => x.ReversalOfTransferId)
+            .HasDatabaseName("IX_bank_transfers_ReversalOfTransferId");
     }
 }

@@ -11,5 +11,6 @@ public interface ICustomerRepository
     Task<bool> ExistsByTcknAsync(string tckn, CancellationToken ct = default);
     Task AddAsync(Customer entity, CancellationToken ct = default);
     Task UpdateAsync(Customer entity, CancellationToken ct = default);
+    Task<Customer?> FindByEmailOrNationalIdAsync(string emailOrNationalId, CancellationToken ct = default);
 }
 

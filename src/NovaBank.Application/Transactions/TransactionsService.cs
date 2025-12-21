@@ -12,13 +12,16 @@ public class TransactionsService : ITransactionsService
 {
     private readonly IAccountRepository _accountRepository;
     private readonly ITransfersService _transfersService;
+    private readonly IAuditLogger _auditLogger;
 
     public TransactionsService(
         IAccountRepository accountRepository,
-        ITransfersService transfersService)
+        ITransfersService transfersService,
+        IAuditLogger auditLogger)
     {
         _accountRepository = accountRepository;
         _transfersService = transfersService;
+        _auditLogger = auditLogger;
     }
 
     public async Task<Result<TransactionResponse>> DepositAsync(DepositRequest request, CancellationToken ct = default)
@@ -50,7 +53,28 @@ public class TransactionsService : ITransactionsService
 
         var transferResult = await _transfersService.TransferInternalAsync(transferRequest, ct);
         if (!transferResult.IsSuccess)
+        {
+            await _auditLogger.LogAsync(
+                AuditAction.Deposit.ToString(),
+                success: false,
+                entityType: "Account",
+                entityId: request.AccountId.ToString(),
+                summary: transferResult.ErrorMessage ?? "Para yatırma başarısız",
+                errorCode: transferResult.ErrorCode,
+                metadata: new { accountId = request.AccountId, amount = request.Amount },
+                ct: ct);
             return Result<TransactionResponse>.Failure(transferResult.ErrorCode!, transferResult.ErrorMessage!);
+        }
+
+        // Audit log - başarılı deposit
+        await _auditLogger.LogAsync(
+            AuditAction.Deposit.ToString(),
+            success: true,
+            entityType: "Account",
+            entityId: request.AccountId.ToString(),
+            summary: $"Para yatırma başarılı: {request.Amount} {request.Currency}",
+            metadata: new { accountId = request.AccountId, amount = request.Amount, currency = request.Currency.ToString() },
+            ct: ct);
 
         // Transfer başarılı, Credit transaction'ı döndür (müşteri hesabına gelen)
         // TransferResponse'dan transaction bilgisi çıkaramayız, bu yüzden basit bir response döndürüyoruz
@@ -96,7 +120,28 @@ public class TransactionsService : ITransactionsService
 
         var transferResult = await _transfersService.TransferInternalAsync(transferRequest, ct);
         if (!transferResult.IsSuccess)
+        {
+            await _auditLogger.LogAsync(
+                AuditAction.Withdraw.ToString(),
+                success: false,
+                entityType: "Account",
+                entityId: request.AccountId.ToString(),
+                summary: transferResult.ErrorMessage ?? "Para çekme başarısız",
+                errorCode: transferResult.ErrorCode,
+                metadata: new { accountId = request.AccountId, amount = request.Amount },
+                ct: ct);
             return Result<TransactionResponse>.Failure(transferResult.ErrorCode!, transferResult.ErrorMessage!);
+        }
+
+        // Audit log - başarılı withdraw
+        await _auditLogger.LogAsync(
+            AuditAction.Withdraw.ToString(),
+            success: true,
+            entityType: "Account",
+            entityId: request.AccountId.ToString(),
+            summary: $"Para çekme başarılı: {request.Amount} {request.Currency}",
+            metadata: new { accountId = request.AccountId, amount = request.Amount, currency = request.Currency.ToString() },
+            ct: ct);
 
         // Transfer başarılı, Debit transaction'ı döndür (müşteri hesabından çıkan)
         return Result<TransactionResponse>.Success(new TransactionResponse(
