@@ -143,6 +143,13 @@ public static class AdminEndpoints
                 }
             }
             
+            // Action filtresi: "Hepsi" veya boş ise null gönder
+            string? actionFilter = null;
+            if (!string.IsNullOrWhiteSpace(action) && action != "Hepsi")
+            {
+                actionFilter = action;
+            }
+            
             // bool parse et
             bool? successBool = null;
             if (success == "true")
@@ -154,7 +161,7 @@ public static class AdminEndpoints
             // take değerini clamp et
             var takeValue = take.HasValue ? Math.Clamp(take.Value, 1, 1000) : 200;
             
-            var result = await service.GetAuditLogsAsync(fromDt, toDt, search, action, successBool, takeValue);
+            var result = await service.GetAuditLogsAsync(fromDt, toDt, search, actionFilter, successBool, takeValue);
             if (!result.IsSuccess)
             {
                 return result.ErrorCode switch

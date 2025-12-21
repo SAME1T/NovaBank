@@ -55,10 +55,12 @@ public static class CustomersEndpoints
             var result = await service.RequestPasswordResetAsync(req);
             if (!result.IsSuccess)
             {
+                // Mail gönderim hatası için 400 döndür (500 değil)
+                var statusCode = result.ErrorCode == ErrorCodes.EmailSendFailed ? 400 : 400;
                 return TypedResults.Problem(
                     detail: result.ErrorMessage ?? "Şifre sıfırlama isteği başarısız.",
-                    statusCode: result.ErrorCode == ErrorCodes.EmailSendFailed ? 500 : 400,
-                    title: "Password Reset Failed",
+                    statusCode: statusCode,
+                    title: "Şifre Sıfırlama Hatası",
                     extensions: new Dictionary<string, object?>
                     {
                         ["errorCode"] = result.ErrorCode,

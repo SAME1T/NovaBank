@@ -26,16 +26,20 @@ public class AuditLogRepository : IAuditLogRepository
         var query = _context.AuditLogs.AsNoTracking().AsQueryable();
 
         // Tarih filtresi - UTC'ye çevir (PostgreSQL timestamptz için)
+        // Bitiş günü dahil olmalı: başlangıç günü 00:00 UTC, bitiş günü+1 00:00 UTC (exclusive)
         if (from.HasValue)
         {
-            var fromUtc = ToUtcSafe(from.Value.Date);
+            // Başlangıç gününün başlangıcı (00:00) UTC
+            var fromLocal = DateTime.SpecifyKind(from.Value.Date, DateTimeKind.Local);
+            var fromUtc = fromLocal.ToUniversalTime();
             query = query.Where(x => x.CreatedAt >= fromUtc);
         }
 
         if (to.HasValue)
         {
-            // to.Date.AddDays(1) ile exclusive end yap (gün bazlı filtreleme için)
-            var toUtcExclusive = ToUtcSafe(to.Value.Date.AddDays(1));
+            // Bitiş gününün sonrası (bir sonraki gün 00:00) UTC - bitiş günü dahil olur
+            var toLocalNextDay = DateTime.SpecifyKind(to.Value.Date.AddDays(1), DateTimeKind.Local);
+            var toUtcExclusive = toLocalNextDay.ToUniversalTime();
             query = query.Where(x => x.CreatedAt < toUtcExclusive);
         }
 
@@ -47,13 +51,14 @@ public class AuditLogRepository : IAuditLogRepository
         if (success.HasValue)
             query = query.Where(x => x.Success == success.Value);
 
-        // Search filtresi (Summary, EntityId, ActorRole, Action içinde arama)
+        // Search filtresi (Summary, EntityId, EntityType, ActorRole, Action içinde arama)
         if (!string.IsNullOrWhiteSpace(search))
         {
             var searchTerm = $"%{search.Trim()}%";
             query = query.Where(x =>
                 (x.Summary != null && EF.Functions.ILike(x.Summary, searchTerm)) ||
                 (x.EntityId != null && EF.Functions.ILike(x.EntityId, searchTerm)) ||
+                (x.EntityType != null && EF.Functions.ILike(x.EntityType, searchTerm)) ||
                 (x.ActorRole != null && EF.Functions.ILike(x.ActorRole, searchTerm)) ||
                 (x.Action != null && EF.Functions.ILike(x.Action, searchTerm)));
         }

@@ -248,13 +248,13 @@ public class CustomersService : ICustomersService
 
                 await _emailSender.SendAsync(customer.Email, subject, htmlBody, ct);
 
-                // Audit log - başarılı
+                // Audit log - başarılı (mail gönderildi)
                 await _auditLogger.LogAsync(
-                    "PasswordResetRequested",
+                    "PasswordResetEmailSent",
                     success: true,
                     entityType: "Customer",
                     entityId: customer.Id.ToString(),
-                    summary: $"Şifre sıfırlama kodu gönderildi: {customer.Email}",
+                    summary: $"Şifre sıfırlama kodu mail ile gönderildi: {customer.Email}",
                     ct: ct);
 
                 return Result<PasswordResetRequestResponse>.Success(
@@ -262,27 +262,36 @@ public class CustomersService : ICustomersService
             }
             catch (Exception emailEx)
             {
-                // Mail gönderimi başarısız - audit log (summary kısa tutulmalı, 256 char sınırı var)
-                var shortErrorMsg = emailEx.Message.Length > 150 
-                    ? emailEx.Message.Substring(0, 150) + "..." 
-                    : emailEx.Message;
+                // SMTP 535 hatası kontrolü
+                var isSmtpAuthError = emailEx.Message.Contains("535") || 
+                                     emailEx.Message.Contains("Authentication") ||
+                                     emailEx.Message.Contains("Username and Password not accepted");
+                
+                // Summary kısa tutulmalı (256 char sınırı var, AuditLogger'da truncate edilir ama yine de kısaltıyoruz)
+                var summaryMsg = isSmtpAuthError 
+                    ? "E-posta gönderilemedi: SMTP kimlik doğrulama hatası (Gmail App Password gerekli)" 
+                    : "E-posta gönderilemedi: SMTP hatası";
+                
+                if (summaryMsg.Length > 200)
+                    summaryMsg = summaryMsg.Substring(0, 197) + "...";
+                
                 await _auditLogger.LogAsync(
                     "PasswordResetEmailFailed",
                     success: false,
                     entityType: "Customer",
                     entityId: customer.Id.ToString(),
-                    summary: $"E-posta gönderilemedi: {shortErrorMsg}",
+                    summary: summaryMsg,
                     errorCode: ErrorCodes.EmailSendFailed,
                     ct: ct);
 
-                // Detaylı hata mesajı döndür (Development için)
-                var errorDetail = $"EMAIL_SEND_FAILED: {emailEx.GetType().Name}: {emailEx.Message}";
-                if (emailEx.InnerException != null)
-                    errorDetail += $" | Inner: {emailEx.InnerException.Message}";
+                // Kullanıcıya Türkçe mesaj
+                var userFriendlyMsg = isSmtpAuthError
+                    ? "Kod gönderilemedi: SMTP ayarlarını kontrol edin (Gmail App Password gerekli)."
+                    : "Kod gönderilemedi: E-posta gönderim hatası. Lütfen daha sonra tekrar deneyin.";
 
                 return Result<PasswordResetRequestResponse>.Failure(
                     ErrorCodes.EmailSendFailed,
-                    errorDetail);
+                    userFriendlyMsg);
             }
         }
         catch (Exception ex)

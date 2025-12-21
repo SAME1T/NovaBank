@@ -1270,7 +1270,7 @@ public partial class FrmMain : XtraForm
             "Hepsi", "LoginSuccess", "LoginFailed", "Deposit", "Withdraw", 
             "TransferInternal", "TransferExternal", "AdminUpdateOverdraft", 
             "AdminUpdateAccountStatus", "AdminUpdateCustomerActive", "AdminResetCustomerPassword",
-            "PasswordResetRequested", "PasswordResetEmailFailed", "PasswordResetFailed", "PasswordResetCompleted"
+            "PasswordResetRequested", "PasswordResetEmailSent", "PasswordResetEmailFailed", "PasswordResetFailed", "PasswordResetCompleted"
         });
         cmbAuditAction.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
         cmbAuditAction.EditValue = "Hepsi"; // Varsayılan değer
@@ -1577,8 +1577,19 @@ public partial class FrmMain : XtraForm
     {
         try
         {
-            var from = dtAuditFrom?.EditValue as DateTime?;
-            var to = dtAuditTo?.EditValue as DateTime?;
+            // Tarih filtreleri: Sadece DATE kısmını al (saat 00:00)
+            DateTime? from = null;
+            if (dtAuditFrom?.EditValue is DateTime fromDt)
+            {
+                from = fromDt.Date;
+            }
+            
+            DateTime? to = null;
+            if (dtAuditTo?.EditValue is DateTime toDt)
+            {
+                to = toDt.Date;
+            }
+            
             var search = txtAuditSearch?.Text?.Trim();
             
             // Action mapping: "Hepsi" veya boş ise null
@@ -1601,6 +1612,13 @@ public partial class FrmMain : XtraForm
             var logs = await _api.GetAuditLogsAsync(from, to, search, action, success, 200);
             if (logs != null && gridAuditLogs != null && gridAuditLogsView != null)
             {
+                if (logs.Count == 0)
+                {
+                    XtraMessageBox.Show("Seçilen filtreye göre kayıt bulunamadı.", "Bilgi", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    gridAuditLogs.DataSource = null;
+                    return;
+                }
+
                 gridAuditLogs.DataSource = logs;
                 
                 // Kolonları yapılandır (her seferinde yeniden yapılandır)
