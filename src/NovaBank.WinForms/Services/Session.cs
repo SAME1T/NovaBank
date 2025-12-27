@@ -14,6 +14,7 @@ public static class Session
     public static string? AccessToken { get; set; }
 
     public static bool IsAdmin => CurrentRole == UserRole.Admin;
+    public static bool IsManager => CurrentRole == UserRole.Manager;
 
     public static void Clear()
     {

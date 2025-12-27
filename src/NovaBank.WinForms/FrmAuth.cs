@@ -59,7 +59,7 @@ public partial class FrmAuth : XtraForm
                 XtraMessageBox.Show(await resp.Content.ReadAsStringAsync(), "Hata");
                 return;
             }
-            XtraMessageBox.Show("Kayıt oluşturuldu!\nGiriş sekmesine TC'nizi yazarak giriş yapınız.", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            XtraMessageBox.Show("Kayıt oluşturuldu!\n\nHesabınız admin onayı bekliyor.\nOnaylandıktan sonra giriş sekmesinden TC'nizi yazarak giriş yapabilirsiniz.", "Başarılı", MessageBoxButtons.OK, MessageBoxIcon.Information);
             // TC'yi giriş sekmesine taşı
             txtLoginTc.Text = txtRegTc.Text;
             // Giriş sekmesine geç

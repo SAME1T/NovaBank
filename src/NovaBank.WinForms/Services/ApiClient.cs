@@ -1,3 +1,4 @@
+#nullable enable
 using System.Net.Http;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Configuration;
@@ -144,6 +145,11 @@ public sealed class ApiClient
         return await GetAsync<List<AccountResponse>>($"/api/v1/accounts/by-customer/{customerId}");
     }
 
+    public async Task<List<AccountResponse>?> GetAllAccountsAsync()
+    {
+        return await GetAsync<List<AccountResponse>>("/api/v1/accounts");
+    }
+
     // Para işlemleri
     public async Task<HttpResponseMessage> DepositAsync(Guid accountId, decimal amount, string currency, string? description)
     {
@@ -277,6 +283,27 @@ public sealed class ApiClient
         return result ?? new List<AuditLogResponse>();
     }
 
+    // Pending Approvals
+    public async Task<List<PendingApprovalResponse>> GetPendingApprovalsAsync()
+    {
+        var url = "/api/v1/admin/pending-approvals";
+        return await GetAsync<List<PendingApprovalResponse>>(url) ?? new List<PendingApprovalResponse>();
+    }
+
+    public async Task<HttpResponseMessage> ApproveCustomerAsync(Guid customerId)
+    {
+        var url = $"/api/v1/admin/customers/{customerId}/approve";
+        AddAuthHeaders();
+        return await _http.PostAsync(url, null);
+    }
+
+    public async Task<HttpResponseMessage> RejectCustomerAsync(Guid customerId)
+    {
+        var url = $"/api/v1/admin/customers/{customerId}/reject";
+        AddAuthHeaders();
+        return await _http.PostAsync(url, null);
+    }
+
     // Password Reset
     public async Task<HttpResponseMessage> PasswordResetRequestAsync(string emailOrTc)
     {
@@ -301,4 +328,192 @@ public sealed class ApiClient
         // Anonymous endpoint, token gerekmez
         return await PostAsync(url, req);
     }
+
+    // Approval Workflow Methods
+    public async Task<List<NovaBank.Contracts.ApprovalWorkflows.ApprovalWorkflowResponse>> GetApprovalWorkflowsAsync(NovaBank.Core.Enums.UserRole? role = null)
+    {
+        var url = "/api/approval-workflows/pending";
+        if (role.HasValue)
+            url += $"?role={role.Value}";
+            
+        return await GetAsync<List<NovaBank.Contracts.ApprovalWorkflows.ApprovalWorkflowResponse>>(url) ?? new List<NovaBank.Contracts.ApprovalWorkflows.ApprovalWorkflowResponse>();
+    }
+
+    public async Task<HttpResponseMessage> ApproveWorkflowAsync(Guid id)
+    {
+        var url = $"/api/approval-workflows/{id}/approve";
+        return await PostAsync(url, new { });
+    }
+
+    public async Task<HttpResponseMessage> RejectWorkflowAsync(Guid id, string reason)
+    {
+        var url = $"/api/approval-workflows/{id}/reject?reason={Uri.EscapeDataString(reason)}";
+        return await PostAsync(url, new { });
+    }
+
+    // Limits
+    public async Task<List<NovaBank.Contracts.Limits.TransactionLimitResponse>> GetLimitsAsync()
+    {
+        return await GetAsync<List<NovaBank.Contracts.Limits.TransactionLimitResponse>>("/api/limits") ?? new();
+    }
+
+    public async Task<HttpResponseMessage> CreateLimitAsync(NovaBank.Contracts.Limits.CreateLimitRequest request)
+    {
+        return await PostAsync("/api/limits", request);
+    }
+    
+    // Commissions
+    public async Task<List<NovaBank.Contracts.Commissions.CommissionResponse>> GetCommissionsAsync(NovaBank.Core.Enums.CommissionType type)
+    {
+        return await GetAsync<List<NovaBank.Contracts.Commissions.CommissionResponse>>($"/api/commissions?type={type}") ?? new();
+    }
+
+    public async Task<HttpResponseMessage> CreateCommissionAsync(NovaBank.Contracts.Commissions.CreateCommissionRequest request)
+    {
+        return await PostAsync("/api/commissions", request);
+    }
+
+    // KYC
+    public async Task<HttpResponseMessage> SubmitKycAsync(NovaBank.Contracts.Kyc.CreateKycVerificationRequest request)
+    {
+        return await PostAsync("/api/kyc", request);
+    }
+
+    public async Task<List<NovaBank.Contracts.Kyc.KycVerificationResponse>> GetMyKycAsync()
+    {
+        return await GetAsync<List<NovaBank.Contracts.Kyc.KycVerificationResponse>>("/api/kyc/my") ?? new();
+    }
+
+    public async Task<List<NovaBank.Contracts.Kyc.KycVerificationResponse>> GetPendingKycAsync()
+    {
+        return await GetAsync<List<NovaBank.Contracts.Kyc.KycVerificationResponse>>("/api/kyc/pending") ?? new();
+    }
+
+    public async Task<HttpResponseMessage> VerifyKycAsync(Guid id)
+    {
+        return await PostAsync($"/api/kyc/{id}/verify", new { });
+    }
+
+    public async Task<HttpResponseMessage> RejectKycAsync(Guid id, string reason)
+    {
+        return await PostAsync($"/api/kyc/{id}/reject?reason={Uri.EscapeDataString(reason)}", new { });
+    }
+
+    // Bills
+    public async Task<List<NovaBank.Contracts.Bills.BillInstitutionResponse>> GetBillInstitutionsAsync()
+    {
+        return await GetAsync<List<NovaBank.Contracts.Bills.BillInstitutionResponse>>("/api/bills/institutions") ?? new();
+    }
+
+    public async Task<NovaBank.Contracts.Bills.BillInquiryResponse?> InquireBillAsync(NovaBank.Contracts.Bills.BillInquiryRequest request)
+    {
+        var resp = await PostAsync<NovaBank.Contracts.Bills.BillInquiryRequest, NovaBank.Contracts.Bills.BillInquiryResponse>("/api/bills/inquire", request);
+        return resp;
+    }
+
+    public async Task<HttpResponseMessage> PayBillAsync(NovaBank.Contracts.Bills.PayBillRequest request)
+    {
+        return await PostAsync("/api/bills/pay", request);
+    }
+
+    public async Task<List<NovaBank.Contracts.Bills.BillPaymentResponse>> GetMyBillHistoryAsync()
+    {
+        return await GetAsync<List<NovaBank.Contracts.Bills.BillPaymentResponse>>("/api/bills/my-history") ?? new();
+    }
+
+    // Admin: Manage Bill Institutions
+    public async Task<HttpResponseMessage> CreateBillInstitutionAsync(NovaBank.Contracts.Bills.CreateBillInstitutionRequest request)
+    {
+        return await PostAsync("/api/bills/institutions", request);
+    }
+
+    public async Task<HttpResponseMessage> DeleteBillInstitutionAsync(Guid institutionId)
+    {
+        AddAuthHeaders();
+        return await _http.DeleteAsync($"/api/bills/institutions/{institutionId}");
+    }
+    
+    // Notifications
+    public async Task<List<NovaBank.Contracts.Notifications.NotificationResponse>> GetMyNotificationsAsync(int take = 50)
+    {
+         return await GetAsync<List<NovaBank.Contracts.Notifications.NotificationResponse>>($"/api/notifications?take={take}") ?? new();
+    }
+    
+    public async Task<int> GetUnreadNotificationCountAsync()
+    {
+        return await GetAsync<int>("/api/notifications/unread-count");
+    }
+    
+    public async Task MarkNotificationReadAsync(Guid id)
+    {
+        await PostAsync($"/api/notifications/{id}/read", new { });
+    }
+
+    // ===== CREDIT CARD =====
+    
+    /// <summary>Kredi kartı başvurusu yap</summary>
+    public async Task<HttpResponseMessage> ApplyCreditCardAsync(decimal requestedLimit, decimal monthlyIncome)
+    {
+        return await PostAsync("/api/v1/credit-cards/apply", new { RequestedLimit = requestedLimit, MonthlyIncome = monthlyIncome });
+    }
+
+    /// <summary>Kullanıcının kartlarını getir</summary>
+    public async Task<List<CreditCardSummaryDto>> GetMyCardsAsync()
+    {
+        return await GetAsync<List<CreditCardSummaryDto>>("/api/v1/credit-cards/my-cards") ?? new();
+    }
+
+    /// <summary>Kullanıcının kredi kartı başvurularını getir</summary>
+    public async Task<List<CreditCardApplicationDto>> GetMyCardApplicationsAsync()
+    {
+        return await GetAsync<List<CreditCardApplicationDto>>("/api/v1/credit-cards/my-applications") ?? new();
+    }
+
+    /// <summary>Kredi kartı borcu öde</summary>
+    public async Task<HttpResponseMessage> PayCardDebtAsync(Guid cardId, decimal amount)
+    {
+        return await PostAsync($"/api/v1/credit-cards/{cardId}/payment", new { Amount = amount });
+    }
+
+    // Admin: Bekleyen kredi kartı başvuruları
+    public async Task<List<CreditCardApplicationDto>> GetPendingCardApplicationsAsync()
+    {
+        return await GetAsync<List<CreditCardApplicationDto>>("/api/v1/admin/credit-card-applications") ?? new();
+    }
+
+    public async Task<HttpResponseMessage> ApproveCardApplicationAsync(Guid applicationId, decimal approvedLimit)
+    {
+        return await PostAsync($"/api/v1/admin/credit-card-applications/{applicationId}/approve", new { ApprovedLimit = approvedLimit });
+    }
+
+    public async Task<HttpResponseMessage> RejectCardApplicationAsync(Guid applicationId, string reason)
+    {
+        return await PostAsync($"/api/v1/admin/credit-card-applications/{applicationId}/reject", new { Reason = reason });
+    }
 }
+
+// DTO'lar
+public record CreditCardSummaryDto(
+    Guid CardId, 
+    string MaskedPan, 
+    decimal CreditLimit, 
+    decimal AvailableLimit,
+    decimal CurrentDebt, 
+    DateTime? MinPaymentDueDate,
+    decimal? MinPaymentAmount,
+    string Status,
+    int ExpiryMonth,
+    int ExpiryYear);
+
+public record CreditCardApplicationDto(
+    Guid ApplicationId,
+    Guid CustomerId,
+    string CustomerName,
+    decimal MonthlyIncome,
+    decimal RequestedLimit,
+    decimal? ApprovedLimit,
+    string Status,
+    DateTime CreatedAt,
+    DateTime? ProcessedAt,
+    string? RejectionReason);
+

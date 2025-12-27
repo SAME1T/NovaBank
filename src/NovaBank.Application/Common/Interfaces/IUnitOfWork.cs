@@ -6,6 +6,11 @@ namespace NovaBank.Application.Common.Interfaces;
 public interface IUnitOfWork
 {
     /// <summary>
+    /// Saves all changes made in the current context to the database.
+    /// </summary>
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
+
+    /// <summary>
     /// Executes an action within a database transaction.
     /// If the action completes successfully, the transaction is committed.
     /// If an exception occurs, the transaction is rolled back.
@@ -19,4 +24,5 @@ public interface IUnitOfWork
     /// </summary>
     Task<T> ExecuteInTransactionAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken ct = default);
 }
+
 

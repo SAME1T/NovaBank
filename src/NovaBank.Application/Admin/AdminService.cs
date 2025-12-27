@@ -55,7 +55,8 @@ public class AdminService : IAdminService
                 $"{c.FirstName} {c.LastName}",
                 masked,
                 c.Role.ToString(),
-                c.IsActive
+                c.IsActive,
+                c.IsApproved
             );
         }).ToList();
 
@@ -313,6 +314,88 @@ public class AdminService : IAdminService
         )).ToList();
 
         return Result<List<AuditLogResponse>>.Success(responses);
+    }
+
+    public async Task<Result<List<PendingApprovalResponse>>> GetPendingApprovalsAsync(CancellationToken ct = default)
+    {
+        if (!_currentUser.IsAdmin)
+            return Result<List<PendingApprovalResponse>>.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+
+        var customers = await _customerRepository.GetPendingApprovalsAsync(ct);
+        var responses = customers.Select(c => new PendingApprovalResponse(
+            c.Id,
+            $"{c.FirstName} {c.LastName}",
+            c.NationalId.Value,
+            c.Email ?? "",
+            c.CreatedAt
+        )).ToList();
+
+        return Result<List<PendingApprovalResponse>>.Success(responses);
+    }
+
+    public async Task<Result<ApproveCustomerResponse>> ApproveCustomerAsync(Guid customerId, CancellationToken ct = default)
+    {
+        if (!_currentUser.IsAdmin)
+            return Result<ApproveCustomerResponse>.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+
+        var result = await _unitOfWork.ExecuteInTransactionAsync(async (transactionCt) =>
+        {
+            var customer = await _customerRepository.GetByIdAsync(customerId, transactionCt);
+            if (customer is null)
+                return Result<ApproveCustomerResponse>.Failure(ErrorCodes.NotFound, "Müşteri bulunamadı.");
+
+            customer.Approve();
+            await _customerRepository.UpdateAsync(customer, transactionCt);
+
+            var response = new ApproveCustomerResponse(customerId, customer.IsApproved);
+            return Result<ApproveCustomerResponse>.Success(response);
+        }, ct);
+
+        if (result.IsSuccess)
+        {
+            await _auditLogger.LogAsync(
+                "CustomerApproved",
+                success: true,
+                entityType: "Customer",
+                entityId: customerId.ToString(),
+                summary: "Müşteri hesabı onaylandı",
+                metadata: new { customerId },
+                ct: ct);
+        }
+
+        return result;
+    }
+
+    public async Task<Result> RejectCustomerAsync(Guid customerId, CancellationToken ct = default)
+    {
+        if (!_currentUser.IsAdmin)
+            return Result.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+
+        var result = await _unitOfWork.ExecuteInTransactionAsync(async (transactionCt) =>
+        {
+            var customer = await _customerRepository.GetByIdAsync(customerId, transactionCt);
+            if (customer is null)
+                return Result.Failure(ErrorCodes.NotFound, "Müşteri bulunamadı.");
+
+            customer.Reject();
+            await _customerRepository.UpdateAsync(customer, transactionCt);
+
+            return Result.Success();
+        }, ct);
+
+        if (result.IsSuccess)
+        {
+            await _auditLogger.LogAsync(
+                "CustomerRejected",
+                success: true,
+                entityType: "Customer",
+                entityId: customerId.ToString(),
+                summary: "Müşteri hesabı reddedildi ve pasif yapıldı",
+                metadata: new { customerId },
+                ct: ct);
+        }
+
+        return result;
     }
 }
 

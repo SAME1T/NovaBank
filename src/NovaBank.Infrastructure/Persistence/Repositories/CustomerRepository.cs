@@ -57,6 +57,15 @@ public class CustomerRepository : ICustomerRepository
             .ToListAsync(ct);
     }
 
+    public async Task<List<Customer>> GetPendingApprovalsAsync(CancellationToken ct = default)
+    {
+        return await _context.Customers
+            .AsNoTracking()
+            .Where(c => !c.IsApproved && c.Role == NovaBank.Core.Enums.UserRole.Customer)
+            .OrderBy(c => c.CreatedAt)
+            .ToListAsync(ct);
+    }
+
     public async Task<Customer?> FindByEmailOrNationalIdAsync(string emailOrNationalId, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(emailOrNationalId))

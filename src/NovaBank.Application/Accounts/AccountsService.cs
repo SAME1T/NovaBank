@@ -14,15 +14,18 @@ public class AccountsService : IAccountsService
     private readonly IAccountRepository _accountRepository;
     private readonly ICustomerRepository _customerRepository;
     private readonly IIbanGenerator _ibanGenerator;
+    private readonly IUnitOfWork _unitOfWork;
 
     public AccountsService(
         IAccountRepository accountRepository,
         ICustomerRepository customerRepository,
-        IIbanGenerator ibanGenerator)
+        IIbanGenerator ibanGenerator,
+        IUnitOfWork unitOfWork)
     {
         _accountRepository = accountRepository;
         _customerRepository = customerRepository;
         _ibanGenerator = ibanGenerator;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<AccountResponse>> CreateAccountAsync(CreateAccountRequest request, CancellationToken ct = default)
@@ -51,6 +54,7 @@ public class AccountsService : IAccountsService
         );
 
         await _accountRepository.AddAsync(account, ct);
+        await _unitOfWork.SaveChangesAsync(ct); // Veritabanına kaydet!
 
         var response = new AccountResponse(
             account.Id,
@@ -150,6 +154,21 @@ public class AccountsService : IAccountsService
 
         var fullName = $"{customer.FirstName} {customer.LastName}";
         return Result<string>.Success(fullName);
+    }
+
+    public async Task<Result<List<AccountResponse>>> GetAllAsync(CancellationToken ct = default)
+    {
+        var accounts = await _accountRepository.GetAllAsync(ct);
+        var responses = accounts.Select(a => new AccountResponse(
+            a.Id,
+            a.CustomerId,
+            a.AccountNo.Value,
+            a.Iban.Value,
+            a.Currency.ToString(),
+            a.Balance.Amount,
+            a.OverdraftLimit
+        )).ToList();
+        return Result<List<AccountResponse>>.Success(responses);
     }
 }
 

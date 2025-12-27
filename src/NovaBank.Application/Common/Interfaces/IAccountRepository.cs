@@ -12,6 +12,7 @@ public interface IAccountRepository
     Task<bool> ExistsByIbanAsync(string iban, CancellationToken ct = default);
     Task AddAsync(Account entity, CancellationToken ct = default);
     Task UpdateAsync(Account entity, CancellationToken ct = default);
+    Task<List<Account>> GetAllAsync(CancellationToken ct = default);
 
     /// <summary>
     /// Gets an account by ID with FOR UPDATE lock for concurrent transaction safety.

@@ -48,7 +48,28 @@ public sealed class AccountConfig : IEntityTypeConfiguration<Account>
             .HasDefaultValue(AccountStatus.Active)
             .IsRequired();
 
+        // Şube ilişkisi
+        b.Property(x => x.BranchId).HasColumnName("branch_id");
+
+        // Onay alanları
+        b.Property(x => x.IsApproved).HasColumnName("is_approved").HasDefaultValue(false);
+        b.Property(x => x.ApprovedById).HasColumnName("approved_by_id");
+        b.Property(x => x.ApprovedAt).HasColumnName("approved_at");
+
+        // Hesap türü ve faiz
+        b.Property(x => x.AccountType)
+            .HasColumnName("account_type")
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(AccountType.Checking);
+        b.Property(x => x.InterestRate)
+            .HasColumnName("interest_rate")
+            .HasColumnType("decimal(8,5)")
+            .HasDefaultValue(0);
+
         b.HasIndex(x => x.AccountNo).IsUnique();
+        b.HasIndex(x => x.BranchId);
         b.HasOne<Customer>().WithMany().HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Cascade);
     }
 }
+

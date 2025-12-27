@@ -88,6 +88,9 @@ public class CustomersService : ICustomersService
 
         await _accountRepository.AddAsync(newAccount, ct);
 
+        // Veritabanına kaydet
+        await _unitOfWork.SaveChangesAsync(ct);
+
         var response = new CustomerResponse(
             customer.Id,
             customer.NationalId.Value,
@@ -166,15 +169,33 @@ public class CustomersService : ICustomersService
 
         if (!customer.IsActive)
         {
+            // Eğer hesap onaylanmamış ve deaktifse = reddedilmiş demektir
+            var message = !customer.IsApproved 
+                ? "Üyeliğiniz yetkili kişilerce reddedilmiştir. Detaylı bilgi için müşteri hizmetleri ile iletişime geçiniz."
+                : "Hesabınız devre dışı bırakılmıştır. Detaylı bilgi için müşteri hizmetleri ile iletişime geçiniz.";
+            
             await _auditLogger.LogAsync(
                 AuditAction.LoginFailed.ToString(),
                 success: false,
                 entityType: "Customer",
                 entityId: customer.Id.ToString(),
-                summary: "Hesap deaktif",
+                summary: !customer.IsApproved ? "Üyelik reddedildi" : "Hesap deaktif",
                 errorCode: ErrorCodes.Unauthorized,
                 ct: ct);
-            return Result<LoginResponse>.Failure(ErrorCodes.Unauthorized, "Hesap deaktif.");
+            return Result<LoginResponse>.Failure(ErrorCodes.Unauthorized, message);
+        }
+
+        if (!customer.IsApproved)
+        {
+            await _auditLogger.LogAsync(
+                AuditAction.LoginFailed.ToString(),
+                success: false,
+                entityType: "Customer",
+                entityId: customer.Id.ToString(),
+                summary: "Hesap onay bekliyor",
+                errorCode: ErrorCodes.Unauthorized,
+                ct: ct);
+            return Result<LoginResponse>.Failure(ErrorCodes.Unauthorized, "Hesabınız henüz onaylanmamıştır. Admin onayı bekleniyor. Onaylandığında giriş yapabilirsiniz.");
         }
 
         var (token, expiresAt) = _jwtTokenService.CreateToken(customer.Id, customer.Role.ToString());

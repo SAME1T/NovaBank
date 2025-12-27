@@ -43,6 +43,7 @@ public class AdminSeeder
                 AdminPassword,
                 UserRole.Admin
             );
+            admin.Approve(); // Admin otomatik onaylı olmalı
             await _customerRepository.AddAsync(admin, ct);
             await _context.SaveChangesAsync(ct); // İlk kayıt için SaveChanges gerekli
         }

@@ -5,7 +5,8 @@ public sealed record CustomerSummaryResponse(
     string FullName,
     string NationalIdMasked,
     string Role,
-    bool IsActive);
+    bool IsActive,
+    bool IsApproved);
 
 public sealed record AccountAdminResponse(
     Guid AccountId,
@@ -46,3 +47,14 @@ public sealed record AuditLogQuery(
     string? Action,
     bool? Success,
     int Take = 200);
+
+public sealed record PendingApprovalResponse(
+    Guid CustomerId,
+    string FullName,
+    string NationalId,
+    string Email,
+    DateTime CreatedAt);
+
+public sealed record ApproveCustomerResponse(
+    Guid CustomerId,
+    bool IsApproved);

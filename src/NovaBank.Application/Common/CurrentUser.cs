@@ -10,7 +10,9 @@ public class CurrentUser
     public Guid? CustomerId { get; set; }
     public UserRole? Role { get; set; }
 
+    public bool IsAuthenticated => CustomerId.HasValue;
     public bool IsAdmin => Role == UserRole.Admin;
+    public bool IsManager => Role == UserRole.Manager;
     public bool IsCustomer => Role == UserRole.Customer;
 
     public bool CanAccessCustomer(Guid customerId)

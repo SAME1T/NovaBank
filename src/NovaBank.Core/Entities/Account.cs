@@ -17,8 +17,20 @@ namespace NovaBank.Core.Entities
         public Money Balance { get; private set; }
         public decimal OverdraftLimit { get; private set; }
         public AccountStatus Status { get; private set; } = AccountStatus.Active;
+        
+        // Şube ilişkisi
+        public Guid? BranchId { get; private set; }
+        
+        // Onay alanları
+        public bool IsApproved { get; private set; } = false;
+        public Guid? ApprovedById { get; private set; }
+        public DateTime? ApprovedAt { get; private set; }
+        
+        // Hesap türü ve faiz
+        public AccountType AccountType { get; private set; } = AccountType.Checking;
+        public decimal InterestRate { get; private set; } = 0;
 
-        public Account(Guid customerId, AccountNo accountNo, Iban iban, Currency currency, Money openingBalance, decimal overdraftLimit, AccountStatus status = AccountStatus.Active)
+        public Account(Guid customerId, AccountNo accountNo, Iban iban, Currency currency, Money openingBalance, decimal overdraftLimit, AccountStatus status = AccountStatus.Active, AccountType accountType = AccountType.Checking)
         {
             if (overdraftLimit < 0) throw new ArgumentException("OverdraftLimit cannot be negative.", nameof(overdraftLimit));
             if (openingBalance is null) throw new ArgumentNullException(nameof(openingBalance));
@@ -30,6 +42,7 @@ namespace NovaBank.Core.Entities
             Balance = openingBalance;
             OverdraftLimit = overdraftLimit;
             Status = status;
+            AccountType = accountType;
         }
 
         /// <summary>Updates the overdraft limit.</summary>
@@ -83,8 +96,37 @@ namespace NovaBank.Core.Entities
         /// <summary>Withdraws the specified amount or throws if not allowed.</summary>
         public void Withdraw(Money amount)
         {
-            if (!CanWithdraw(amount)) throw new InvalidOperationException("Insufficient funds.");
+            // Sistem kasa hesabı için bakiye kontrolü yapma (sonsuz para kaynağı)
+            bool isSystemCashAccount = Iban.Value.StartsWith("TR00CASH");
+            
+            if (!isSystemCashAccount && !CanWithdraw(amount)) 
+                throw new InvalidOperationException("Insufficient funds.");
+            
             Balance = Balance.Subtract(amount);
+            TouchUpdated();
+        }
+
+        /// <summary>Hesabı onayla.</summary>
+        public void Approve(Guid approvedById)
+        {
+            IsApproved = true;
+            ApprovedById = approvedById;
+            ApprovedAt = DateTime.UtcNow;
+            TouchUpdated();
+        }
+
+        /// <summary>Şube ata.</summary>
+        public void AssignBranch(Guid branchId)
+        {
+            BranchId = branchId;
+            TouchUpdated();
+        }
+
+        /// <summary>Faiz oranını güncelle.</summary>
+        public void UpdateInterestRate(decimal rate)
+        {
+            if (rate < 0) throw new ArgumentException("Faiz oranı negatif olamaz.", nameof(rate));
+            InterestRate = rate;
             TouchUpdated();
         }
     }

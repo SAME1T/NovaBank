@@ -117,6 +117,13 @@ app.MapReports();
 
 // Admin-only endpoints - RequireAuthorization will be set in MapAdmin method
 app.MapAdmin();
+app.MapCreditCards();
+app.MapApprovalWorkflows();
+app.MapLimits();
+app.MapCommissions();
+app.MapKyc();
+app.MapBills();
+app.MapNotifications();
 
 app.MapGet("/", () => Results.Redirect("/swagger"));
 app.Run();

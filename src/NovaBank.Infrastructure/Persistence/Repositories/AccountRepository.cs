@@ -62,6 +62,11 @@ public class AccountRepository : IAccountRepository
         // SaveChanges will be handled by UnitOfWork
     }
 
+    public async Task<List<Account>> GetAllAsync(CancellationToken ct = default)
+    {
+        return await _context.Accounts.ToListAsync(ct);
+    }
+
     public async Task<Account?> GetByIdForUpdateAsync(Guid id, CancellationToken ct = default)
     {
         // PostgreSQL FOR UPDATE ile satır kilitleme

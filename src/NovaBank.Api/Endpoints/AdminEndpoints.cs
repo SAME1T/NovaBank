@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 using NovaBank.Application.Admin;
 using NovaBank.Application.Common.Errors;
 using NovaBank.Contracts.Admin;
 using NovaBank.Core.Enums;
+using NovaBank.Infrastructure.Persistence;
 
 namespace NovaBank.Api.Endpoints;
 
@@ -171,6 +173,99 @@ public static class AdminEndpoints
                 };
             }
             return TypedResults.Ok(result.Value!);
+        });
+
+        g.MapGet("/pending-approvals", async Task<Results<Ok<List<PendingApprovalResponse>>, BadRequest<string>, UnauthorizedHttpResult>>
+        (IAdminService service) =>
+        {
+            var result = await service.GetPendingApprovalsAsync();
+            if (!result.IsSuccess)
+            {
+                return result.ErrorCode switch
+                {
+                    ErrorCodes.Unauthorized => TypedResults.Unauthorized(),
+                    _ => TypedResults.BadRequest(result.ErrorMessage ?? "Onay bekleyen müşteriler alınamadı.")
+                };
+            }
+            return TypedResults.Ok(result.Value!);
+        });
+
+        g.MapPost("/customers/{customerId:guid}/approve", async Task<Results<Ok<ApproveCustomerResponse>, BadRequest<string>, NotFound, UnauthorizedHttpResult>>
+        (Guid customerId, IAdminService service) =>
+        {
+            var result = await service.ApproveCustomerAsync(customerId);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorCode switch
+                {
+                    ErrorCodes.Unauthorized => TypedResults.Unauthorized(),
+                    ErrorCodes.NotFound => TypedResults.NotFound(),
+                    _ => TypedResults.BadRequest(result.ErrorMessage ?? "Müşteri onaylanamadı.")
+                };
+            }
+            return TypedResults.Ok(result.Value!);
+        });
+
+        g.MapPost("/customers/{customerId:guid}/reject", async Task<Results<Ok, BadRequest<string>, NotFound, UnauthorizedHttpResult>>
+        (Guid customerId, IAdminService service) =>
+        {
+            var result = await service.RejectCustomerAsync(customerId);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorCode switch
+                {
+                    ErrorCodes.Unauthorized => TypedResults.Unauthorized(),
+                    ErrorCodes.NotFound => TypedResults.NotFound(),
+                    _ => TypedResults.BadRequest(result.ErrorMessage ?? "Müşteri reddedilemedi.")
+                };
+            }
+            return TypedResults.Ok();
+        });
+
+        // Veritabanını sıfırlama endpoint'i (SADECE DEVELOPMENT ORTAMINDA!)
+        g.MapPost("/reset-database", async Task<Results<Ok<string>, BadRequest<string>, StatusCodeHttpResult>>
+        (IWebHostEnvironment env, BankDbContext context) =>
+        {
+            // Sadece Development ortamında çalışsın
+            if (!env.IsDevelopment())
+            {
+                return TypedResults.StatusCode(403);
+            }
+
+            try
+            {
+                // Tüm tabloları temizle
+                await context.Database.ExecuteSqlRawAsync(@"
+                    SET session_replication_role = 'replica';
+                    TRUNCATE TABLE ""bank_transactions"" CASCADE;
+                    TRUNCATE TABLE ""bank_transfers"" CASCADE;
+                    TRUNCATE TABLE ""bank_cards"" CASCADE;
+                    TRUNCATE TABLE ""bank_payment_orders"" CASCADE;
+                    TRUNCATE TABLE ""bank_loans"" CASCADE;
+                    TRUNCATE TABLE ""bank_credit_card_applications"" CASCADE;
+                    TRUNCATE TABLE ""bank_accounts"" CASCADE;
+                    TRUNCATE TABLE ""approval_workflows"" CASCADE;
+                    TRUNCATE TABLE ""transaction_limits"" CASCADE;
+                    TRUNCATE TABLE ""commissions"" CASCADE;
+                    TRUNCATE TABLE ""kyc_verifications"" CASCADE;
+                    TRUNCATE TABLE ""bill_payments"" CASCADE;
+                    TRUNCATE TABLE ""notifications"" CASCADE;
+                    TRUNCATE TABLE ""notification_preferences"" CASCADE;
+                    TRUNCATE TABLE ""exchange_rates"" CASCADE;
+                    TRUNCATE TABLE ""audit_logs"" CASCADE;
+                    TRUNCATE TABLE ""password_reset_tokens"" CASCADE;
+                    TRUNCATE TABLE ""bank_customers"" CASCADE;
+                    TRUNCATE TABLE ""branches"" CASCADE;
+                    TRUNCATE TABLE ""bill_institutions"" CASCADE;
+                    SET session_replication_role = 'origin';
+                ");
+
+                return TypedResults.Ok("Veritabanı başarıyla sıfırlandı. Uygulama yeniden başlatıldığında admin kullanıcısı otomatik oluşturulacak.");
+            }
+            catch (Exception ex)
+            {
+                return TypedResults.BadRequest($"Veritabanı sıfırlama hatası: {ex.Message}");
+            }
         });
 
         return app;

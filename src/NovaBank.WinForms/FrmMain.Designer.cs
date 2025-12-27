@@ -11,14 +11,14 @@ partial class FrmMain
 {
     private System.ComponentModel.IContainer components = null;
     private XtraTabControl tabs;
-    private XtraTabPage tabMyAccounts, tabDw, tabTransfer, tabReports, tabSettings, tabExchangeRates, tabAdmin;
+    private XtraTabPage tabMyAccounts, tabDw, tabTransfer, tabReports, tabSettings, tabExchangeRates, tabAdmin, tabCards, tabBills;
     // My Accounts controls
     private TextEdit txtAccCustomerId, txtAccountNo, txtOverdraft;
     private ComboBoxEdit cmbCurrency;
     private SimpleButton btnCreateAccount;
-    private GridControl gridAccounts;
-    private GridView gridAccountsView;
-    private LabelControl lblWelcome, lblTotalBalance, lblAccountCount;
+    private GridControl gridAccounts, gridMyCards, gridCardsMain;
+    private GridView gridAccountsView, gridMyCardsView, gridCardsMainView;
+    private LabelControl lblWelcome, lblTotalBalance, lblAccountCount, lblCardsTitle;
     private PanelControl pnlAccountSummary;
     // Deposit/Withdraw
     private TextEdit txtDepositAmount, txtDepositDesc, txtWithdrawAmount, txtWithdrawDesc;
@@ -28,7 +28,7 @@ partial class FrmMain
     private SimpleButton btnDeposit, btnWithdraw;
     // Transfer
     private TextEdit txtToId, txtAmount, txtTransDesc, txtToIban;
-    private ComboBoxEdit cmbTransCurrency, cmbTransferAccount;
+    private ComboBoxEdit cmbTransCurrency, cmbTransferAccount, cmbRecipientAccount;
     private SimpleButton btnInternalTransfer, btnExternalTransfer;
     private LabelControl lblSenderBind, lblRecipientName;
     // Reports
@@ -66,6 +66,32 @@ partial class FrmMain
     private SimpleButton btnAuditLoad;
     private GridControl gridAuditLogs;
     private GridView gridAuditLogsView;
+    // Pending Approvals
+    private GridControl gridPendingApprovals;
+    private GridView gridPendingApprovalsView;
+    private SimpleButton btnApproveCustomer, btnRejectCustomer, btnRefreshPending;
+    private CheckEdit chkAdminIsApproved;
+    private LabelControl lblPendingTitle;
+    // Credit Cards
+    private GridControl gridCardApplications;
+    private GridView gridCardApplicationsView;
+    private SimpleButton btnApplyCard, btnPayCardDebt, btnRefreshCards;
+    private TextEdit txtCardLimit, txtCardIncome, txtCardPaymentAmount;
+    // Bills
+    private ComboBoxEdit cmbBillInstitution, cmbBillAccount;
+    private TextEdit txtSubscriberNo;
+    private SimpleButton btnInquireBill, btnPayBill;
+    private LabelControl lblBillAmount, lblBillDueDate;
+    private GridControl gridBillHistory;
+    private GridView gridBillHistoryView;
+    // Admin Credit Cards
+    private XtraTabControl tabAdminSub;
+    private XtraTabPage tabAdminUsers, tabAdminCards, tabAdminAudit, tabAdminBills;
+    private GridControl gridAdminCardApplications, gridAdminInstitutions;
+    private GridView gridAdminCardApplicationsView, gridAdminInstitutionsView;
+    private SimpleButton btnApproveCardApp, btnRejectCardApp, btnRefreshCardApps, btnAddInstitution, btnDeleteInstitution, btnRefreshInstitutions;
+    private TextEdit txtInstCode, txtInstName, txtInstLogo;
+    private ComboBoxEdit cmbInstCategory;
 
     protected override void Dispose(bool disposing)
     {
@@ -84,7 +110,14 @@ partial class FrmMain
         this.lblStatus = new ToolStripStatusLabel("🔒 NovaBank - Güvenli Dijital Bankacılık");
         this.lblStatus.ForeColor = Color.White;
         this.lblStatus.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+        this.lblStatus.Spring = true;
+        this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+        var lblNotifications = new ToolStripStatusLabel("🔔 Bildirimler: 0");
+        lblNotifications.Name = "lblNotifications";
+        lblNotifications.ForeColor = Color.Yellow;
+        lblNotifications.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
         this.statusStrip.Items.Add(this.lblStatus);
+        this.statusStrip.Items.Add(lblNotifications);
         
         this.tabs = new XtraTabControl();
         this.tabMyAccounts = new XtraTabPage();
@@ -103,9 +136,13 @@ partial class FrmMain
         
         this.tabAdmin = new XtraTabPage();
         this.tabAdmin.Text = "Yönetim";
+        this.tabCards = new XtraTabPage();
+        this.tabCards.Text = "💳 Kartlarım";
+        this.tabBills = new XtraTabPage();
+        this.tabBills.Text = "📄 Fatura Öde";
         // tabAdmin sadece admin kullanıcılar için görünür olacak - ApplyRoleBasedUI() ile kontrol edilir
         // Başlangıçta tab listesine eklenmez, admin login olduğunda eklenecek
-        this.tabs.TabPages.AddRange(new XtraTabPage[] { tabMyAccounts, tabDw, tabTransfer, tabReports, tabExchangeRates, tabSettings });
+        this.tabs.TabPages.AddRange(new XtraTabPage[] { tabMyAccounts, tabDw, tabTransfer, tabCards, tabBills, tabReports, tabExchangeRates, tabSettings });
         this.tabs.Dock = DockStyle.Fill;
         this.tabs.HeaderLocation = DevExpress.XtraTab.TabHeaderLocation.Top;
         this.tabs.AppearancePage.Header.Font = new Font("Segoe UI", 10, FontStyle.Bold);
@@ -240,7 +277,7 @@ partial class FrmMain
         gridAccountsView = new GridView();
         gridAccounts.MainView = gridAccountsView;
         gridAccounts.Location = new Point(20, 360);
-        gridAccounts.Size = new Size(1240, 420);
+        gridAccounts.Size = new Size(1240, 200);
         gridAccountsView.OptionsBehavior.Editable = false;
         gridAccountsView.OptionsSelection.MultiSelect = false;
         gridAccountsView.OptionsView.ShowGroupPanel = false;
@@ -256,9 +293,28 @@ partial class FrmMain
         gridAccountsView.DoubleClick += GridAccounts_CellDoubleClick;
         gridAccountsView.SelectionChanged += GridAccounts_SelectionChanged;
         
+        lblCardsTitle = new LabelControl()
+        {
+            Location = new Point(20, 575),
+            Text = "💳 Kredi Kartlarım",
+            Appearance = { Font = new Font("Segoe UI", 15, FontStyle.Bold), ForeColor = Color.FromArgb(25, 118, 210) }
+        };
+
+        gridMyCards = new GridControl();
+        gridMyCardsView = new GridView();
+        gridMyCards.MainView = gridMyCardsView;
+        gridMyCards.Location = new Point(20, 610);
+        gridMyCards.Size = new Size(1240, 180);
+        gridMyCardsView.OptionsBehavior.Editable = false;
+        gridMyCardsView.OptionsView.ShowGroupPanel = false;
+        gridMyCardsView.Appearance.HeaderPanel.BackColor = Color.FromArgb(25, 118, 210);
+        gridMyCardsView.Appearance.HeaderPanel.ForeColor = Color.White;
+        gridMyCardsView.Appearance.HeaderPanel.Font = new Font("Segoe UI", 10, FontStyle.Bold);
+        gridMyCardsView.DoubleClick += GridMyCards_CellDoubleClick;
+
         pnlAccountSummary.Controls.AddRange(new Control[] { lblWelcome, lblTotalBalance, lblAccountCount });
         pnlCreateAccount.Controls.AddRange(new Control[] { lblCreateAccount, lblCreateInfo, txtAccCustomerId, lblCreateCurrency, cmbCurrency, lblOverdraft, txtOverdraft, btnCreateAccount });
-        tabMyAccounts.Controls.AddRange(new Control[] { pnlAccountSummary, pnlCreateAccount, gridAccounts });
+        tabMyAccounts.Controls.AddRange(new Control[] { pnlAccountSummary, pnlCreateAccount, gridAccounts, lblCardsTitle, gridMyCards });
 
         // Deposit/Withdraw - Modern Design
         var pnlDeposit = new PanelControl() 
@@ -622,6 +678,7 @@ partial class FrmMain
             Location = new Point(320, 295), 
             Size = new Size(200, 45), 
             Text = "📋 Hesap Seç",
+            Visible = false, // Gizlendi
             Appearance = { Font = new Font("Segoe UI", 11.5F, FontStyle.Bold), ForeColor = Color.White },
             AppearanceHovered = { ForeColor = Color.White },
             LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
@@ -631,7 +688,18 @@ partial class FrmMain
         btnInternalTransfer.AppearancePressed.BackColor = Color.FromArgb(123, 31, 162);
         btnInternalTransfer.Click += btnSelectAccount_Click;
         
-        pnlTransfer.Controls.AddRange(new Control[] { lblTransfer, lblTransferAccount, cmbTransferAccount, lblSenderBind, lblIban, txtToIban, lblRecipientName, lblAmount, txtAmount, lblCurrency, cmbTransCurrency, lblDesc, txtTransDesc, btnExternalTransfer, btnInternalTransfer });
+        // Admin için alıcı hesap seçimi
+        cmbRecipientAccount = new ComboBoxEdit()
+        {
+            Location = new Point(150, 130),
+            Size = new Size(350, 26),
+            Visible = false
+        };
+        cmbRecipientAccount.Properties.NullText = "Alıcı hesap seçin (Admin)";
+        cmbRecipientAccount.Properties.TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor;
+        cmbRecipientAccount.Properties.Appearance.Font = new Font("Segoe UI", 9F);
+        
+        pnlTransfer.Controls.AddRange(new Control[] { lblTransfer, lblTransferAccount, cmbTransferAccount, lblSenderBind, lblIban, txtToIban, lblRecipientName, lblAmount, txtAmount, lblCurrency, cmbTransCurrency, lblDesc, txtTransDesc, btnExternalTransfer, btnInternalTransfer, cmbRecipientAccount });
         tabTransfer.Controls.Add(pnlTransfer);
 
         // Reports - Modern Design

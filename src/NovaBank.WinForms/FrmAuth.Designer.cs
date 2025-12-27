@@ -88,10 +88,12 @@ partial class FrmAuth
             Location = new Point(25, 60), 
             Size = new Size(590, 40)
         };
-        txtLoginTc.Properties.NullValuePrompt = "TC Kimlik No giriniz";
+        txtLoginTc.Properties.MaxLength = 11; // 11 haneli TC
+        txtLoginTc.Properties.NullValuePrompt = "TC Kimlik No (11 hane)";
         txtLoginTc.Properties.NullValuePromptShowForEmptyValue = true;
         txtLoginTc.Properties.Appearance.Font = new Font("Segoe UI", 11);
         txtLoginTc.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        txtLoginTc.KeyPress += (s, e) => { if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar)) e.Handled = true; };
         
         var lblPassword = new LabelControl() 
         { 
@@ -195,10 +197,12 @@ partial class FrmAuth
             Location = new Point(25, 55), 
             Size = new Size(590, 40)
         };
-        txtRegTc.Properties.NullValuePrompt = "TC Kimlik No";
+        txtRegTc.Properties.MaxLength = 11; // 11 haneli TC
+        txtRegTc.Properties.NullValuePrompt = "TC Kimlik No (11 hane)";
         txtRegTc.Properties.NullValuePromptShowForEmptyValue = true;
         txtRegTc.Properties.Appearance.Font = new Font("Segoe UI", 11);
         txtRegTc.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegTc.KeyPress += (s, e) => { if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar)) e.Handled = true; };
         
         var lblRegAd = new LabelControl() 
         { 
@@ -263,10 +267,12 @@ partial class FrmAuth
             Location = new Point(25, 310), 
             Size = new Size(590, 40)
         };
-        txtRegTel.Properties.NullValuePrompt = "Telefon (opsiyonel)";
+        txtRegTel.Properties.MaxLength = 10; // 10 haneli telefon
+        txtRegTel.Properties.NullValuePrompt = "Telefon (10 hane, örn: 5321234567)";
         txtRegTel.Properties.NullValuePromptShowForEmptyValue = true;
         txtRegTel.Properties.Appearance.Font = new Font("Segoe UI", 11);
         txtRegTel.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegTel.KeyPress += (s, e) => { if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar)) e.Handled = true; };
         
         var lblRegPassword = new LabelControl() 
         { 

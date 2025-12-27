@@ -23,6 +23,7 @@ public sealed class CustomerConfig : IEntityTypeConfiguration<Customer>
         b.Property(x => x.Phone).HasMaxLength(20);
         b.Property(x => x.PasswordHash).HasMaxLength(500).IsRequired();
         b.Property(x => x.IsActive).HasDefaultValue(true);
+        b.Property(x => x.IsApproved).HasDefaultValue(false);
         b.Property(x => x.Role)
             .HasConversion<int>()
             .HasDefaultValue(UserRole.Customer)
@@ -34,6 +35,25 @@ public sealed class CustomerConfig : IEntityTypeConfiguration<Customer>
             .HasMaxLength(11)
             .IsRequired();
 
+        // Şube ilişkisi
+        b.Property(x => x.BranchId).HasColumnName("branch_id");
+
+        // KYC alanları
+        b.Property(x => x.RiskLevel)
+            .HasColumnName("risk_level")
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .HasDefaultValue(RiskLevel.Low);
+        b.Property(x => x.KycCompleted).HasColumnName("kyc_completed").HasDefaultValue(false);
+        b.Property(x => x.KycCompletedAt).HasColumnName("kyc_completed_at");
+
+        // Güvenlik alanları
+        b.Property(x => x.LastLoginAt).HasColumnName("last_login_at");
+        b.Property(x => x.FailedLoginCount).HasColumnName("failed_login_count").HasDefaultValue(0);
+        b.Property(x => x.LockedUntil).HasColumnName("locked_until");
+
         b.HasIndex(x => x.NationalId).IsUnique();
+        b.HasIndex(x => x.Email);
+        b.HasIndex(x => x.BranchId);
     }
 }

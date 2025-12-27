@@ -11,5 +11,6 @@ public interface IAccountsService
     Task<Result<AccountResponse>> GetByAccountNoAsync(long accountNo, CancellationToken ct = default);
     Task<Result<AccountResponse>> GetByIbanAsync(string iban, CancellationToken ct = default);
     Task<Result<string>> GetOwnerNameByIbanAsync(string iban, CancellationToken ct = default);
+    Task<Result<List<AccountResponse>>> GetAllAsync(CancellationToken ct = default);
 }
 

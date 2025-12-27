@@ -31,6 +31,15 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITransferRepository, TransferRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
         services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
+        services.AddScoped<ICardRepository, CardRepository>();
+        services.AddScoped<ICreditCardApplicationRepository, CreditCardApplicationRepository>();
+        services.AddScoped<IApprovalWorkflowRepository, ApprovalWorkflowRepository>();
+        services.AddScoped<ITransactionLimitRepository, TransactionLimitRepository>();
+        services.AddScoped<ICommissionRepository, CommissionRepository>();
+        services.AddScoped<IKycRepository, KycRepository>();
+        services.AddScoped<IBillInstitutionRepository, BillInstitutionRepository>();
+        services.AddScoped<IBillPaymentRepository, BillPaymentRepository>();
+        services.AddScoped<INotificationRepository, NotificationRepository>();
         
         // Infrastructure Services
         services.AddScoped<IIbanGenerator, IbanGenerator>();
@@ -50,3 +59,4 @@ public static class ServiceCollectionExtensions
         return services;
     }
 }
+

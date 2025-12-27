@@ -25,8 +25,15 @@ static class Program
         using var auth = new FrmAuth();
         if (auth.ShowDialog() == DialogResult.OK && auth.LoggedInCustomerId.HasValue)
         {
-            var main = new FrmMain(auth.LoggedInCustomerId.Value);
-            System.Windows.Forms.Application.Run(main);
+            if (Services.Session.CurrentRole == Core.Enums.UserRole.Manager)
+            {
+                 System.Windows.Forms.Application.Run(new FrmManager());
+            }
+            else
+            {
+                var main = new FrmMain(auth.LoggedInCustomerId.Value);
+                System.Windows.Forms.Application.Run(main);
+            }
         }
     }    
 }

@@ -6,6 +6,7 @@ namespace NovaBank.Core.Enums;
 public enum UserRole
 {
     Customer = 0,
-    Admin = 1
+    Admin = 1,
+    Manager = 2
 }
 

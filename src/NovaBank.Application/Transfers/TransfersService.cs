@@ -133,7 +133,10 @@ public class TransfersService : ITransfersService
                 return Result<TransferResponse>.Failure(ErrorCodes.CurrencyMismatch, "Para birimi uyuşmuyor.");
             }
 
-            if (!fromAccount.CanWithdraw(new Money(request.Amount, request.Currency)))
+            // Sistem kasa hesabı için bakiye kontrolü yapma (sonsuz para kaynağı)
+            bool isSystemCashAccount = fromAccount.Iban.Value == SystemAccounts.CashTryIban;
+            
+            if (!isSystemCashAccount && !fromAccount.CanWithdraw(new Money(request.Amount, request.Currency)))
             {
                 await _auditLogger.LogAsync(
                     AuditAction.TransferInternal.ToString(),

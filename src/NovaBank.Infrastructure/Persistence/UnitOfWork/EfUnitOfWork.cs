@@ -16,6 +16,11 @@ public class EfUnitOfWork : IUnitOfWork
         _context = context;
     }
 
+    public async Task<int> SaveChangesAsync(CancellationToken ct = default)
+    {
+        return await _context.SaveChangesAsync(ct);
+    }
+
     public async Task ExecuteInTransactionAsync(Func<CancellationToken, Task> action, CancellationToken ct = default)
     {
         await ExecuteInTransactionAsync(async (cancellationToken) =>

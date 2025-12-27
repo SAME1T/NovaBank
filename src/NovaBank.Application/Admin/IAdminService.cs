@@ -13,5 +13,8 @@ public interface IAdminService
     Task<Result<UpdateCustomerActiveResponse>> UpdateCustomerActiveAsync(Guid customerId, bool isActive, CancellationToken ct = default);
     Task<Result<ResetCustomerPasswordResponse>> ResetCustomerPasswordAsync(Guid customerId, CancellationToken ct = default);
     Task<Result<List<AuditLogResponse>>> GetAuditLogsAsync(DateTime? from, DateTime? to, string? search, string? action, bool? success, int take, CancellationToken ct = default);
+    Task<Result<List<PendingApprovalResponse>>> GetPendingApprovalsAsync(CancellationToken ct = default);
+    Task<Result<ApproveCustomerResponse>> ApproveCustomerAsync(Guid customerId, CancellationToken ct = default);
+    Task<Result> RejectCustomerAsync(Guid customerId, CancellationToken ct = default);
 }
 

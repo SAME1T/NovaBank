@@ -10,6 +10,13 @@ public static class AccountsEndpoints
     {
         var g = app.MapGroup("/api/v1/accounts").RequireAuthorization("AnyUser");
 
+        g.MapGet("/", async Task<Results<Ok<List<AccountResponse>>, UnauthorizedHttpResult>> (IAccountsService service) =>
+        {
+            var result = await service.GetAllAsync();
+            if (!result.IsSuccess) return TypedResults.Ok(new List<AccountResponse>()); // veya hata dönülebilir
+            return TypedResults.Ok(result.Value!);
+        }).RequireAuthorization("AdminOnly");
+
         g.MapPost("/", async Task<Results<Created<AccountResponse>, BadRequest<string>>> (CreateAccountRequest req, IAccountsService service) =>
         {
             var result = await service.CreateAccountAsync(req);

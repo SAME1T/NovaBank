@@ -15,8 +15,21 @@ namespace NovaBank.Core.Entities
         public int TermMonths { get; private set; }
         public DateTime StartDate { get; private set; }
         public LoanStatus Status { get; private set; }
+        
+        // Onay alanları
+        public bool IsApproved { get; private set; } = false;
+        public Guid? ApprovedById { get; private set; }
+        public DateTime? ApprovedAt { get; private set; }
+        public string? RejectionReason { get; private set; }
+        
+        // Ödeme alanları
+        public Guid? DisbursementAccountId { get; private set; }
+        public decimal RemainingPrincipal { get; private set; }
+        public DateTime? NextPaymentDate { get; private set; }
+        public decimal? NextPaymentAmount { get; private set; }
+        public int PaidInstallments { get; private set; } = 0;
 
-        public Loan(Guid customerId, Money principal, decimal interestRateAnnual, int termMonths, DateTime startDate)
+        public Loan(Guid customerId, Money principal, decimal interestRateAnnual, int termMonths, DateTime startDate, Guid? disbursementAccountId = null)
         {
             if (principal is null) throw new ArgumentNullException(nameof(principal));
             if (interestRateAnnual < 0) throw new ArgumentException("Interest rate cannot be negative.", nameof(interestRateAnnual));
@@ -27,6 +40,8 @@ namespace NovaBank.Core.Entities
             TermMonths = termMonths;
             StartDate = startDate;
             Status = LoanStatus.Draft;
+            DisbursementAccountId = disbursementAccountId;
+            RemainingPrincipal = principal.Amount;
         }
 
         /// <summary>Calculates the monthly installment using the annuity formula.</summary>
@@ -45,6 +60,63 @@ namespace NovaBank.Core.Entities
             return Math.Round(installment, 2, MidpointRounding.AwayFromZero);
         }
 
+        /// <summary>Krediyi onayla.</summary>
+        public void Approve(Guid approvedById)
+        {
+            if (Status != LoanStatus.Draft)
+                throw new InvalidOperationException("Sadece taslak durumundaki krediler onaylanabilir.");
+            
+            IsApproved = true;
+            ApprovedById = approvedById;
+            ApprovedAt = DateTime.UtcNow;
+            Status = LoanStatus.Active;
+            NextPaymentDate = StartDate.AddMonths(1);
+            NextPaymentAmount = MonthlyInstallment();
+            TouchUpdated();
+        }
+
+        /// <summary>Krediyi reddet.</summary>
+        public void Reject(Guid rejectedById, string reason)
+        {
+            if (Status != LoanStatus.Draft)
+                throw new InvalidOperationException("Sadece taslak durumundaki krediler reddedilebilir.");
+            if (string.IsNullOrWhiteSpace(reason))
+                throw new ArgumentException("Red nedeni gerekli.", nameof(reason));
+            
+            IsApproved = false;
+            ApprovedById = rejectedById;
+            ApprovedAt = DateTime.UtcNow;
+            RejectionReason = reason.Trim();
+            Status = LoanStatus.Closed;
+            TouchUpdated();
+        }
+
+        /// <summary>Taksit ödemesi yap.</summary>
+        public void MakePayment(decimal amount)
+        {
+            if (Status != LoanStatus.Active)
+                throw new InvalidOperationException("Sadece aktif kredilere ödeme yapılabilir.");
+            if (amount <= 0)
+                throw new ArgumentException("Ödeme tutarı pozitif olmalı.", nameof(amount));
+            
+            RemainingPrincipal = Math.Max(0, RemainingPrincipal - amount);
+            PaidInstallments++;
+            
+            if (RemainingPrincipal <= 0 || PaidInstallments >= TermMonths)
+            {
+                Status = LoanStatus.Closed;
+                NextPaymentDate = null;
+                NextPaymentAmount = null;
+            }
+            else
+            {
+                NextPaymentDate = NextPaymentDate?.AddMonths(1) ?? DateTime.UtcNow.AddMonths(1);
+                NextPaymentAmount = MonthlyInstallment();
+            }
+            
+            TouchUpdated();
+        }
+
         /// <summary>Closes the loan.</summary>
         public void Close()
         {
@@ -58,5 +130,11 @@ namespace NovaBank.Core.Entities
             Status = LoanStatus.Defaulted;
             TouchUpdated();
         }
+
+        /// <summary>Kalan taksit sayısı.</summary>
+        public int RemainingInstallments => Math.Max(0, TermMonths - PaidInstallments);
+        
+        /// <summary>Toplam geri ödeme tutarı.</summary>
+        public decimal TotalRepayment => MonthlyInstallment() * TermMonths;
     }
 }

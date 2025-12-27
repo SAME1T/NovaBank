@@ -25,6 +25,20 @@ public sealed class LoanConfig : IEntityTypeConfiguration<Loan>
         b.Property(x => x.StartDate);
         b.Property(x => x.Status).HasConversion<int>();
 
+        // Onay alanları
+        b.Property(x => x.IsApproved).HasColumnName("is_approved").HasDefaultValue(false);
+        b.Property(x => x.ApprovedById).HasColumnName("approved_by_id");
+        b.Property(x => x.ApprovedAt).HasColumnName("approved_at");
+        b.Property(x => x.RejectionReason).HasColumnName("rejection_reason").HasMaxLength(500);
+
+        // Ödeme alanları
+        b.Property(x => x.DisbursementAccountId).HasColumnName("disbursement_account_id");
+        b.Property(x => x.RemainingPrincipal).HasColumnName("remaining_principal").HasColumnType("decimal(18,2)");
+        b.Property(x => x.NextPaymentDate).HasColumnName("next_payment_date");
+        b.Property(x => x.NextPaymentAmount).HasColumnName("next_payment_amount").HasColumnType("decimal(18,2)");
+        b.Property(x => x.PaidInstallments).HasColumnName("paid_installments").HasDefaultValue(0);
+
         b.HasIndex(x => new { x.CustomerId, x.Status });
     }
 }
+
