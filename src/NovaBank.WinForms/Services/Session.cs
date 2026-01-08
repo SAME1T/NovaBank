@@ -15,6 +15,12 @@ public static class Session
 
     public static bool IsAdmin => CurrentRole == UserRole.Admin;
     public static bool IsManager => CurrentRole == UserRole.Manager;
+    public static bool IsBranchManager => CurrentRole == UserRole.BranchManager;
+    
+    /// <summary>
+    /// Admin veya BranchManager yetkisi var mı? (Yönetim paneli erişimi için)
+    /// </summary>
+    public static bool IsAdminOrBranchManager => CurrentRole == UserRole.Admin || CurrentRole == UserRole.BranchManager;
 
     public static void Clear()
     {

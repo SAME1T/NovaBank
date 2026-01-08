@@ -60,7 +60,7 @@ public static class CreditCardEndpoints
         customer.MapPost("/{cardId:guid}/payment", async Task<Results<Ok, BadRequest<string>, NotFound, UnauthorizedHttpResult>>
         (Guid cardId, CardPaymentRequest req, ICreditCardService service) =>
         {
-            var result = await service.MakeCardPaymentAsync(cardId, req.Amount);
+            var result = await service.MakeCardPaymentAsync(cardId, req.Amount, req.FromAccountId);
             if (!result.IsSuccess)
             {
                 return result.ErrorCode switch
@@ -73,8 +73,8 @@ public static class CreditCardEndpoints
             return TypedResults.Ok();
         });
 
-        // Admin işlemleri
-        var admin = app.MapGroup("/api/v1/admin/credit-card-applications").RequireAuthorization("AdminOnly");
+        // Admin/BranchManager işlemleri (Kredi kartı başvurularını yönetme)
+        var admin = app.MapGroup("/api/v1/admin/credit-card-applications").RequireAuthorization("AdminOrBranchManager");
 
         admin.MapGet("/", async Task<Results<Ok<List<CreditCardApplicationResponse>>, BadRequest<string>, UnauthorizedHttpResult>>
         (ICreditCardService service) =>

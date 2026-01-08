@@ -31,6 +31,8 @@ public sealed class BankDbContext : DbContext
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
     public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
+    public DbSet<CurrencyPosition> CurrencyPositions => Set<CurrencyPosition>();
+    public DbSet<CurrencyTransaction> CurrencyTransactions => Set<CurrencyTransaction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -57,6 +59,8 @@ public sealed class BankDbContext : DbContext
         modelBuilder.ApplyConfiguration(new NotificationConfig());
         modelBuilder.ApplyConfiguration(new NotificationPreferenceConfig());
         modelBuilder.ApplyConfiguration(new ExchangeRateConfig());
+        modelBuilder.ApplyConfiguration(new CurrencyPositionConfig());
+        modelBuilder.ApplyConfiguration(new CurrencyTransactionConfig());
 
         base.OnModelCreating(modelBuilder);
     }

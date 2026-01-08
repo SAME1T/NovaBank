@@ -14,16 +14,22 @@ public class CurrentUser
     public bool IsAdmin => Role == UserRole.Admin;
     public bool IsManager => Role == UserRole.Manager;
     public bool IsCustomer => Role == UserRole.Customer;
+    public bool IsBranchManager => Role == UserRole.BranchManager;
+    
+    /// <summary>
+    /// Admin veya BranchManager yetkisi var mı? (Yönetim paneli erişimi için)
+    /// </summary>
+    public bool IsAdminOrBranchManager => Role == UserRole.Admin || Role == UserRole.BranchManager;
 
     public bool CanAccessCustomer(Guid customerId)
     {
-        if (IsAdmin) return true;
+        if (IsAdminOrBranchManager) return true;
         return CustomerId == customerId;
     }
 
     public bool CanAccessAccount(Guid accountCustomerId)
     {
-        if (IsAdmin) return true;
+        if (IsAdminOrBranchManager) return true;
         return CustomerId == accountCustomerId;
     }
 }

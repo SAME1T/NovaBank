@@ -12,7 +12,7 @@ public static class AdminEndpoints
 {
     public static IEndpointRouteBuilder MapAdmin(this IEndpointRouteBuilder app)
     {
-        var g = app.MapGroup("/api/v1/admin").RequireAuthorization("AdminOnly");
+        var g = app.MapGroup("/api/v1/admin").RequireAuthorization("AdminOrBranchManager");
 
         g.MapGet("/customers", async Task<Results<Ok<List<CustomerSummaryResponse>>, BadRequest<string>, UnauthorizedHttpResult>>
         (string? search, IAdminService service) =>
@@ -217,6 +217,77 @@ public static class AdminEndpoints
                     ErrorCodes.Unauthorized => TypedResults.Unauthorized(),
                     ErrorCodes.NotFound => TypedResults.NotFound(),
                     _ => TypedResults.BadRequest(result.ErrorMessage ?? "Müşteri reddedilemedi.")
+                };
+            }
+            return TypedResults.Ok();
+        });
+
+        // BranchManager oluşturma endpoint'i (SADECE ADMIN)
+        g.MapPost("/branch-managers", async Task<Results<Ok<CreateBranchManagerResponse>, BadRequest<string>, Conflict<string>, UnauthorizedHttpResult>>
+        (CreateBranchManagerRequest req, IAdminService service) =>
+        {
+            var result = await service.CreateBranchManagerAsync(req);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorCode switch
+                {
+                    ErrorCodes.Unauthorized => TypedResults.Unauthorized(),
+                    ErrorCodes.Conflict => TypedResults.Conflict(result.ErrorMessage ?? "Bu TC Kimlik No ile kayıtlı bir kullanıcı zaten var."),
+                    _ => TypedResults.BadRequest(result.ErrorMessage ?? "BranchManager oluşturulamadı.")
+                };
+            }
+            return TypedResults.Ok(result.Value!);
+        });
+
+        // Kullanıcı rolü güncelleme endpoint'i (SADECE ADMIN)
+        g.MapPut("/customers/{customerId:guid}/role", async Task<Results<Ok<UpdateCustomerRoleResponse>, BadRequest<string>, NotFound, UnauthorizedHttpResult>>
+        (Guid customerId, UpdateCustomerRoleRequest req, IAdminService service) =>
+        {
+            if (!Enum.TryParse<UserRole>(req.Role, out var role))
+                return TypedResults.BadRequest("Geçersiz rol değeri.");
+
+            var result = await service.UpdateCustomerRoleAsync(customerId, role);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorCode switch
+                {
+                    ErrorCodes.Unauthorized => TypedResults.Unauthorized(),
+                    ErrorCodes.NotFound => TypedResults.NotFound(),
+                    _ => TypedResults.BadRequest(result.ErrorMessage ?? "Rol güncellenemedi.")
+                };
+            }
+            return TypedResults.Ok(result.Value!);
+        });
+
+        // Hesap silme endpoint'i (SADECE ADMIN)
+        g.MapDelete("/accounts/{accountId:guid}", async Task<Results<Ok, BadRequest<string>, NotFound, UnauthorizedHttpResult>>
+        (Guid accountId, IAdminService service) =>
+        {
+            var result = await service.DeleteAccountAsync(accountId);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorCode switch
+                {
+                    ErrorCodes.Unauthorized => TypedResults.Unauthorized(),
+                    ErrorCodes.NotFound => TypedResults.NotFound(),
+                    _ => TypedResults.BadRequest(result.ErrorMessage ?? "Hesap silinemedi.")
+                };
+            }
+            return TypedResults.Ok();
+        });
+
+        // Müşteri silme endpoint'i (SADECE ADMIN)
+        g.MapDelete("/customers/{customerId:guid}", async Task<Results<Ok, BadRequest<string>, NotFound, UnauthorizedHttpResult>>
+        (Guid customerId, IAdminService service) =>
+        {
+            var result = await service.DeleteCustomerAsync(customerId);
+            if (!result.IsSuccess)
+            {
+                return result.ErrorCode switch
+                {
+                    ErrorCodes.Unauthorized => TypedResults.Unauthorized(),
+                    ErrorCodes.NotFound => TypedResults.NotFound(),
+                    _ => TypedResults.BadRequest(result.ErrorMessage ?? "Müşteri silinemedi.")
                 };
             }
             return TypedResults.Ok();

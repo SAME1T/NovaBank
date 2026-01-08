@@ -5,6 +5,7 @@ using NovaBank.Application.Common.Results;
 using NovaBank.Contracts.CreditCards;
 using NovaBank.Core.Entities;
 using NovaBank.Core.Enums;
+using NovaBank.Core.ValueObjects;
 
 namespace NovaBank.Application.CreditCards;
 
@@ -116,7 +117,7 @@ public class CreditCardService : ICreditCardService
         return Result<List<MyApplicationResponse>>.Success(responses);
     }
 
-    public async Task<Result> MakeCardPaymentAsync(Guid cardId, decimal amount, CancellationToken ct = default)
+    public async Task<Result> MakeCardPaymentAsync(Guid cardId, decimal amount, Guid fromAccountId, CancellationToken ct = default)
     {
         if (!_currentUser.IsAuthenticated)
             return Result.Failure(ErrorCodes.Unauthorized, "Giriş yapmanız gerekiyor.");
@@ -124,6 +125,7 @@ public class CreditCardService : ICreditCardService
         if (amount <= 0)
             return Result.Failure(ErrorCodes.Validation, "Ödeme tutarı 0'dan büyük olmalı.");
 
+        // Kartı bul
         var cards = await _cardRepository.GetByCustomerIdAsync(_currentUser.CustomerId!.Value, ct);
         var card = cards.FirstOrDefault(c => c.Id == cardId);
         
@@ -133,8 +135,25 @@ public class CreditCardService : ICreditCardService
         if (card.CurrentDebt <= 0)
             return Result.Failure(ErrorCodes.Validation, "Ödeme yapılacak borç bulunmuyor.");
 
+        // Hesabı bul
+        var account = await _accountRepository.GetByIdAsync(fromAccountId, ct);
+        if (account == null || account.CustomerId != _currentUser.CustomerId.Value)
+            return Result.Failure(ErrorCodes.NotFound, "Kaynak hesap bulunamadı.");
+
+        if (account.Currency != Currency.TRY)
+            return Result.Failure(ErrorCodes.Validation, "Kredi kartı borcu sadece TL hesaptan ödenebilir.");
+
         var paymentAmount = Math.Min(amount, card.CurrentDebt);
+        var moneyToDeduct = new Money(paymentAmount, Currency.TRY);
+
+        if (!account.CanWithdraw(moneyToDeduct))
+            return Result.Failure(ErrorCodes.Validation, "Hesapta yeterli bakiye bulunmuyor.");
+
+        // İşlemleri gerçekleştir
+        account.Withdraw(moneyToDeduct);
         card.MakePayment(paymentAmount);
+
+        // TODO: Transaction kaydı oluşturulabilir (TransactionRepository üzerinden)
 
         await _unitOfWork.SaveChangesAsync(ct);
 
@@ -143,8 +162,8 @@ public class CreditCardService : ICreditCardService
             success: true,
             entityType: "Card",
             entityId: cardId.ToString(),
-            summary: $"Kredi kartı ödemesi yapıldı: {paymentAmount:N2} TL. Kalan borç: {card.CurrentDebt:N2} TL",
-            metadata: new { paymentAmount, remainingDebt = card.CurrentDebt },
+            summary: $"Kredi kartı ödemesi yapıldı: {paymentAmount:N2} TL. Kaynak: {account.Iban}. Kalan borç: {card.CurrentDebt:N2} TL",
+            metadata: new { paymentAmount, fromAccountId, remainingDebt = card.CurrentDebt },
             ct: ct);
 
         return Result.Success();
@@ -152,8 +171,8 @@ public class CreditCardService : ICreditCardService
 
     public async Task<Result<List<CreditCardApplicationResponse>>> GetPendingApplicationsAsync(CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
-            return Result<List<CreditCardApplicationResponse>>.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+        if (!_currentUser.IsAdminOrBranchManager)
+            return Result<List<CreditCardApplicationResponse>>.Failure(ErrorCodes.Unauthorized, "Yönetici yetkisi gerekli.");
 
         var applications = await _applicationRepository.GetPendingApplicationsAsync(ct);
 
@@ -180,8 +199,8 @@ public class CreditCardService : ICreditCardService
 
     public async Task<Result> ApproveApplicationAsync(Guid applicationId, decimal approvedLimit, CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
-            return Result.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+        if (!_currentUser.IsAdminOrBranchManager)
+            return Result.Failure(ErrorCodes.Unauthorized, "Yönetici yetkisi gerekli.");
 
         if (approvedLimit <= 0)
             return Result.Failure(ErrorCodes.Validation, "Onaylanan limit 0'dan büyük olmalı.");
@@ -227,8 +246,8 @@ public class CreditCardService : ICreditCardService
 
     public async Task<Result> RejectApplicationAsync(Guid applicationId, string reason, CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
-            return Result.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+        if (!_currentUser.IsAdminOrBranchManager)
+            return Result.Failure(ErrorCodes.Unauthorized, "Yönetici yetkisi gerekli.");
 
         if (string.IsNullOrWhiteSpace(reason))
             return Result.Failure(ErrorCodes.Validation, "Red nedeni gerekli.");
@@ -258,7 +277,7 @@ public class CreditCardService : ICreditCardService
 
     public async Task<Result> ProcessInterestsAsync(CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
+        if (!_currentUser.IsAdminOrBranchManager)
             return Result.Failure(ErrorCodes.Unauthorized, "Sadece yöneticiler faiz işletebilir.");
 
         var cards = await _cardRepository.GetAllAsync(ct);

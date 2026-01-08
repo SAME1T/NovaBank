@@ -9,6 +9,7 @@ using NovaBank.Infrastructure.Email;
 using NovaBank.Infrastructure.Persistence;
 using NovaBank.Infrastructure.Persistence.Repositories;
 using NovaBank.Infrastructure.Persistence.UnitOfWork;
+using NovaBank.Infrastructure.Repositories;
 using NovaBank.Infrastructure.Services;
 
 namespace NovaBank.Infrastructure.Extensions;
@@ -40,6 +41,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IBillInstitutionRepository, BillInstitutionRepository>();
         services.AddScoped<IBillPaymentRepository, BillPaymentRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
+        services.AddScoped<ICurrencyPositionRepository, CurrencyPositionRepository>();
+        services.AddScoped<ICurrencyTransactionRepository, CurrencyTransactionRepository>();
+        services.AddScoped<IExchangeRateRepository, ExchangeRateRepository>();
         
         // Infrastructure Services
         services.AddScoped<IIbanGenerator, IbanGenerator>();

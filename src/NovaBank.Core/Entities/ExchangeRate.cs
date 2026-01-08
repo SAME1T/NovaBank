@@ -36,7 +36,8 @@ public sealed class ExchangeRate : Entity
         TargetCurrency = targetCurrency;
         BuyRate = buyRate;
         SellRate = sellRate;
-        EffectiveDate = effectiveDate.Date;
+        // PostgreSQL timestamp with time zone için UTC gerekli
+        EffectiveDate = DateTime.SpecifyKind(effectiveDate.Date, DateTimeKind.Utc);
         Source = source?.Trim() ?? "TCMB";
     }
 

@@ -29,7 +29,7 @@ public class AdminSeeder
     public async Task SeedAdminAsync(CancellationToken ct = default)
     {
         const string AdminNationalId = "11111111111";
-        const string AdminPassword = "Admin123!"; // TODO: Production'da güvenli şekilde saklanmalı
+        const string AdminPassword = "123456";
 
         var admin = await _customerRepository.GetByTcknAsync(AdminNationalId, ct);
         if (admin is null)
@@ -47,11 +47,11 @@ public class AdminSeeder
             await _customerRepository.AddAsync(admin, ct);
             await _context.SaveChangesAsync(ct); // İlk kayıt için SaveChanges gerekli
         }
-        else if (admin.Role != UserRole.Admin)
+        else
         {
-            // Eğer admin kullanıcısı varsa ama role'ü Admin değilse güncelle
-            // Not: Customer entity'sinde Role setter yok, bu yüzden reflection veya yeni bir metod gerekebilir
-            // Şimdilik sadece seed'de kontrol ediyoruz
+            // Mevcut admin'in şifresini güncelle
+            admin.UpdatePassword(AdminPassword);
+            await _context.SaveChangesAsync(ct);
         }
     }
 }

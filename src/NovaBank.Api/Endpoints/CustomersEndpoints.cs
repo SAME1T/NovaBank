@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Http.HttpResults;
 using NovaBank.Application.Customers;
 using NovaBank.Application.Common.Errors;
 using NovaBank.Contracts.Customers;

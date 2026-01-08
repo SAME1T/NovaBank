@@ -48,13 +48,45 @@ public sealed record AuditLogQuery(
     bool? Success,
     int Take = 200);
 
+public enum PendingItemType
+{
+    Customer,
+    Account
+}
+
 public sealed record PendingApprovalResponse(
-    Guid CustomerId,
+    Guid ItemId,  // CustomerId veya AccountId
+    PendingItemType ItemType,
     string FullName,
     string NationalId,
     string Email,
-    DateTime CreatedAt);
+    DateTime CreatedAt,
+    // Hesap için ek alanlar (nullable)
+    Guid? AccountId = null,
+    string? Iban = null,
+    string? Currency = null);
 
 public sealed record ApproveCustomerResponse(
     Guid CustomerId,
     bool IsApproved);
+
+// BranchManager (Şube Bankacı Yönetimi) oluşturma kontratları
+public sealed record CreateBranchManagerRequest(
+    string NationalId,
+    string FirstName,
+    string LastName,
+    string Email,
+    string Phone,
+    string Password);
+
+public sealed record CreateBranchManagerResponse(
+    Guid CustomerId,
+    string FullName,
+    string Role);
+
+// Kullanıcı rolü güncelleme kontratları
+public sealed record UpdateCustomerRoleRequest(string Role);
+
+public sealed record UpdateCustomerRoleResponse(
+    Guid CustomerId,
+    string Role);

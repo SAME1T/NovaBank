@@ -20,5 +20,11 @@ public enum CommissionType
     /// <summary>ATM çekim</summary>
     AtmWithdrawal = 6,
     /// <summary>Fatura ödeme</summary>
-    BillPayment = 7
+    BillPayment = 7,
+    /// <summary>Kendi hesaplar arası transfer</summary>
+    OwnAccountTransfer = 8,
+    /// <summary>Döviz alım komisyonu</summary>
+    CurrencyBuy = 9,
+    /// <summary>Döviz satım komisyonu</summary>
+    CurrencySell = 10
 }

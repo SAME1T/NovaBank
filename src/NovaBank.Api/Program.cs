@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NovaBank.Application.Extensions;
@@ -9,8 +9,15 @@ using NovaBank.Infrastructure.Persistence.Repositories;
 using NovaBank.Infrastructure.Persistence.Seeding;
 using NovaBank.Api.Endpoints;
 using System.Text;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// JSON Enum String Converter - String olarak gelen enum değerlerini parse etmek için
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 var conn = builder.Configuration.GetConnectionString("Postgres");
 builder.Services.AddHttpContextAccessor(); // Required for AuditLogger and CurrentUser
@@ -38,6 +45,7 @@ builder.Services.AddAuthentication("Bearer")
 builder.Services.AddAuthorization(opt =>
 {
     opt.AddPolicy("AdminOnly", p => p.RequireRole("Admin"));
+    opt.AddPolicy("AdminOrBranchManager", p => p.RequireRole("Admin", "BranchManager"));
     opt.AddPolicy("AnyUser", p => p.RequireAuthenticatedUser());
 });
 
@@ -124,6 +132,7 @@ app.MapCommissions();
 app.MapKyc();
 app.MapBills();
 app.MapNotifications();
+app.MapCurrencyExchangeEndpoints();
 
 app.MapGet("/", () => Results.Redirect("/swagger"));
 app.Run();

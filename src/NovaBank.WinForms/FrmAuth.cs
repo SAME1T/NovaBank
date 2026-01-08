@@ -70,14 +70,45 @@ public partial class FrmAuth : XtraForm
 
     private void BtnShowPassword_Click(object sender, EventArgs e)
     {
-        txtLoginPassword.Properties.UseSystemPasswordChar = !txtLoginPassword.Properties.UseSystemPasswordChar;
-        btnShowPassword.Text = txtLoginPassword.Properties.UseSystemPasswordChar ? "👁" : "🙈";
+        // Şifreyi göster/gizle
+        if (txtLoginPassword.Properties.PasswordChar == '●')
+        {
+            txtLoginPassword.Properties.PasswordChar = '\0'; // Şifreyi göster
+            btnShowPassword.Text = "🙈";
+        }
+        else
+        {
+            txtLoginPassword.Properties.PasswordChar = '●'; // Şifreyi gizle
+            btnShowPassword.Text = "👁";
+        }
     }
 
     private void BtnShowRegPassword_Click(object sender, EventArgs e)
     {
-        txtRegPassword.Properties.UseSystemPasswordChar = !txtRegPassword.Properties.UseSystemPasswordChar;
-        btnShowRegPassword.Text = txtRegPassword.Properties.UseSystemPasswordChar ? "👁" : "🙈";
+        if (txtRegPassword.Properties.PasswordChar == '●')
+        {
+            txtRegPassword.Properties.PasswordChar = '\0';
+            btnShowRegPassword.Text = "🙈";
+        }
+        else
+        {
+            txtRegPassword.Properties.PasswordChar = '●';
+            btnShowRegPassword.Text = "👁";
+        }
+    }
+
+    private void BtnShowRegPasswordConfirm_Click(object sender, EventArgs e)
+    {
+        if (txtRegPasswordConfirm.Properties.PasswordChar == '●')
+        {
+            txtRegPasswordConfirm.Properties.PasswordChar = '\0';
+            (sender as SimpleButton)!.Text = "🙈";
+        }
+        else
+        {
+            txtRegPasswordConfirm.Properties.PasswordChar = '●';
+            (sender as SimpleButton)!.Text = "👁";
+        }
     }
 
     private void BtnForgotPassword_Click(object? sender, EventArgs e)

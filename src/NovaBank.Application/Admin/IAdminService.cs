@@ -16,5 +16,13 @@ public interface IAdminService
     Task<Result<List<PendingApprovalResponse>>> GetPendingApprovalsAsync(CancellationToken ct = default);
     Task<Result<ApproveCustomerResponse>> ApproveCustomerAsync(Guid customerId, CancellationToken ct = default);
     Task<Result> RejectCustomerAsync(Guid customerId, CancellationToken ct = default);
+    
+    // BranchManager yönetimi (sadece Admin)
+    Task<Result<CreateBranchManagerResponse>> CreateBranchManagerAsync(CreateBranchManagerRequest request, CancellationToken ct = default);
+    Task<Result<UpdateCustomerRoleResponse>> UpdateCustomerRoleAsync(Guid customerId, UserRole newRole, CancellationToken ct = default);
+    
+    // Silme işlemleri (sadece Admin)
+    Task<Result> DeleteAccountAsync(Guid accountId, CancellationToken ct = default);
+    Task<Result> DeleteCustomerAsync(Guid customerId, CancellationToken ct = default);
 }
 

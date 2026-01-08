@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NovaBank.Application.Common.Interfaces;
 using NovaBank.Core.Entities;
+using NovaBank.Core.Enums;
 using NovaBank.Core.ValueObjects;
 
 namespace NovaBank.Infrastructure.Persistence.Repositories;
@@ -83,6 +84,25 @@ public class AccountRepository : IAccountRepository
         return await _context.Accounts
             .FromSqlInterpolated($"SELECT * FROM bank_accounts WHERE \"iban\" = {ibanValue} FOR UPDATE")
             .FirstOrDefaultAsync(ct);
+    }
+
+    public async Task<List<Account>> GetPendingApprovalsAsync(CancellationToken ct = default)
+    {
+        return await _context.Accounts
+            .AsNoTracking()
+            .Where(a => a.Status == AccountStatus.PendingApproval)
+            .OrderBy(a => a.CreatedAt)
+            .ToListAsync(ct);
+    }
+
+    public async Task DeleteAsync(Guid id, CancellationToken ct = default)
+    {
+        var entity = await _context.Accounts.FindAsync(new object[] { id }, ct);
+        if (entity != null)
+        {
+            _context.Accounts.Remove(entity);
+            // SaveChanges will be handled by UnitOfWork
+        }
     }
 }
 

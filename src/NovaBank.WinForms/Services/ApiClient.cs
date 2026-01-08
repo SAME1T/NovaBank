@@ -1,6 +1,8 @@
 #nullable enable
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using NovaBank.Contracts.Accounts;
 using NovaBank.Contracts.Transactions;
@@ -12,6 +14,11 @@ namespace NovaBank.WinForms.Services;
 public sealed class ApiClient
 {
     private readonly HttpClient _http;
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
     public string BaseUrl { get; }
     public ApiClient()
     {
@@ -49,28 +56,28 @@ public sealed class ApiClient
     public async Task<T?> GetAsync<T>(string url)
     {
         AddAuthHeaders();
-        return await _http.GetFromJsonAsync<T>(url);
+        return await _http.GetFromJsonAsync<T>(url, _jsonOptions);
     }
 
     public async Task<HttpResponseMessage> PostAsync<T>(string url, T body)
     {
         AddAuthHeaders();
-        return await _http.PostAsJsonAsync(url, body);
+        return await _http.PostAsJsonAsync(url, body, _jsonOptions);
     }
 
     public async Task<TResponse?> PostAsync<TRequest, TResponse>(string url, TRequest body)
     {
         AddAuthHeaders();
-        var response = await _http.PostAsJsonAsync(url, body);
+        var response = await _http.PostAsJsonAsync(url, body, _jsonOptions);
         if (response.IsSuccessStatusCode)
-            return await response.Content.ReadFromJsonAsync<TResponse>();
+            return await response.Content.ReadFromJsonAsync<TResponse>(_jsonOptions);
         return default;
     }
 
     public async Task<HttpResponseMessage> PutAsync<T>(string url, T body)
     {
         AddAuthHeaders();
-        return await _http.PutAsJsonAsync(url, body);
+        return await _http.PutAsJsonAsync(url, body, _jsonOptions);
     }
 
     /// <summary>
@@ -150,6 +157,16 @@ public sealed class ApiClient
         return await GetAsync<List<AccountResponse>>("/api/v1/accounts");
     }
 
+    public async Task<HttpResponseMessage> CreateAccountAsync(CreateAccountRequest request)
+    {
+        return await PostAsync("/api/v1/accounts", request);
+    }
+
+    public async Task<List<AccountResponse>?> GetAccountsAsync()
+    {
+        return await GetAsync<List<AccountResponse>>("/api/v1/accounts");
+    }
+
     // Para işlemleri
     public async Task<HttpResponseMessage> DepositAsync(Guid accountId, decimal amount, string currency, string? description)
     {
@@ -178,6 +195,12 @@ public sealed class ApiClient
         var currencyEnum = Enum.Parse<NovaBank.Core.Enums.Currency>(currency);
         var req = new TransferExternalRequest(fromAccountId, toIban, amount, currencyEnum, description);
         return await PostAsync("/api/v1/transfers/external", req);
+    }
+
+    // Son işlemler
+    public async Task<List<TransactionDto>?> GetTransactionsAsync(int limit = 10)
+    {
+        return await GetAsync<List<TransactionDto>>($"/api/v1/transactions?limit={limit}");
     }
 
     // Ekstre
@@ -229,7 +252,7 @@ public sealed class ApiClient
         AddAuthHeaders();
         var response = await _http.PostAsync(url, null);
         if (response.IsSuccessStatusCode)
-            return await response.Content.ReadFromJsonAsync<NovaBank.Contracts.Admin.ResetCustomerPasswordResponse>();
+            return await response.Content.ReadFromJsonAsync<NovaBank.Contracts.Admin.ResetCustomerPasswordResponse>(_jsonOptions);
         return null;
     }
 
@@ -279,7 +302,7 @@ public sealed class ApiClient
             throw new Exception($"HTTP {(int)response.StatusCode}: {errorMessage}");
         }
 
-        var result = await response.Content.ReadFromJsonAsync<List<AuditLogResponse>>();
+        var result = await response.Content.ReadFromJsonAsync<List<AuditLogResponse>>(_jsonOptions);
         return result ?? new List<AuditLogResponse>();
     }
 
@@ -470,9 +493,9 @@ public sealed class ApiClient
     }
 
     /// <summary>Kredi kartı borcu öde</summary>
-    public async Task<HttpResponseMessage> PayCardDebtAsync(Guid cardId, decimal amount)
+    public async Task<HttpResponseMessage> PayCardDebtAsync(Guid cardId, decimal amount, Guid fromAccountId)
     {
-        return await PostAsync($"/api/v1/credit-cards/{cardId}/payment", new { Amount = amount });
+        return await PostAsync($"/api/v1/credit-cards/{cardId}/payment", new { Amount = amount, FromAccountId = fromAccountId });
     }
 
     // Admin: Bekleyen kredi kartı başvuruları
@@ -489,6 +512,83 @@ public sealed class ApiClient
     public async Task<HttpResponseMessage> RejectCardApplicationAsync(Guid applicationId, string reason)
     {
         return await PostAsync($"/api/v1/admin/credit-card-applications/{applicationId}/reject", new { Reason = reason });
+    }
+
+    // ========== CURRENCY EXCHANGE ==========
+    
+    public async Task<HttpResponseMessage> BuyCurrencyAsync(string currency, decimal amount, Guid fromTryAccountId, Guid toForeignAccountId, string? description = null)
+    {
+        return await PostAsync("/api/v1/currency-exchange/buy", new 
+        { 
+            Currency = currency, 
+            Amount = amount, 
+            FromTryAccountId = fromTryAccountId, 
+            ToForeignAccountId = toForeignAccountId,
+            Description = description
+        });
+    }
+
+    public async Task<HttpResponseMessage> SellCurrencyAsync(string currency, decimal amount, Guid fromForeignAccountId, Guid toTryAccountId, string? description = null)
+    {
+        return await PostAsync("/api/v1/currency-exchange/sell", new 
+        { 
+            Currency = currency, 
+            Amount = amount, 
+            FromForeignAccountId = fromForeignAccountId, 
+            ToTryAccountId = toTryAccountId,
+            Description = description
+        });
+    }
+
+    public async Task<CurrencyPositionsDto?> GetCurrencyPositionsAsync()
+    {
+        return await GetAsync<CurrencyPositionsDto>("/api/v1/currency-exchange/positions");
+    }
+
+    public async Task<CurrencyRateDto?> GetCurrentRateAsync(string currency)
+    {
+        return await GetAsync<CurrencyRateDto>($"/api/v1/currency-exchange/rate/{currency}");
+    }
+
+    public async Task<HttpResponseMessage> SaveExchangeRatesAsync(DateTime rateDate, List<ExchangeRateItemDto> rates)
+    {
+        return await PostAsync("/api/v1/currency-exchange/rates", new 
+        { 
+            RateDate = rateDate, 
+            Rates = rates 
+        });
+    }
+
+    // BranchManager yönetimi (Sadece Admin)
+    public async Task<HttpResponseMessage> CreateBranchManagerAsync(CreateBranchManagerRequest request)
+    {
+        return await PostAsync("/api/v1/admin/branch-managers", request);
+    }
+
+    public async Task<CreateBranchManagerResponse?> CreateBranchManagerWithResponseAsync(CreateBranchManagerRequest request)
+    {
+        var resp = await PostAsync("/api/v1/admin/branch-managers", request);
+        if (resp.IsSuccessStatusCode)
+            return await resp.Content.ReadFromJsonAsync<CreateBranchManagerResponse>(_jsonOptions);
+        return null;
+    }
+
+    public async Task<HttpResponseMessage> UpdateCustomerRoleAsync(Guid customerId, string role)
+    {
+        return await PutAsync($"/api/v1/admin/customers/{customerId}/role", new UpdateCustomerRoleRequest(role));
+    }
+
+    // Silme işlemleri (Sadece Admin)
+    public async Task<HttpResponseMessage> DeleteAccountAsync(Guid accountId)
+    {
+        AddAuthHeaders();
+        return await _http.DeleteAsync($"/api/v1/admin/accounts/{accountId}");
+    }
+
+    public async Task<HttpResponseMessage> DeleteCustomerAsync(Guid customerId)
+    {
+        AddAuthHeaders();
+        return await _http.DeleteAsync($"/api/v1/admin/customers/{customerId}");
     }
 }
 
@@ -516,4 +616,60 @@ public record CreditCardApplicationDto(
     DateTime CreatedAt,
     DateTime? ProcessedAt,
     string? RejectionReason);
+
+// Currency Exchange DTO'ları
+public record CurrencyPositionDto(
+    string Currency,
+    decimal TotalAmount,
+    decimal AverageCostRate,
+    decimal TotalCostTry,
+    decimal CurrentRate,
+    decimal CurrentValue,
+    decimal UnrealizedPnlTry,
+    decimal UnrealizedPnlPercent);
+
+public record CurrencyPositionsDto(
+    List<CurrencyPositionDto> Positions,
+    decimal TotalCostTry,
+    decimal TotalCurrentValue,
+    decimal TotalUnrealizedPnlTry,
+    decimal TotalUnrealizedPnlPercent);
+
+public record CurrencyRateDto(
+    decimal BuyRate,
+    decimal SellRate,
+    DateTime RateDate);
+
+public record CurrencyExchangeResultDto(
+    Guid TransactionId,
+    string ReferenceCode,
+    string Currency,
+    decimal Amount,
+    decimal ExchangeRate,
+    decimal TryAmount,
+    decimal Commission,
+    decimal NetTryAmount,
+    decimal? RealizedPnlTry,
+    decimal? RealizedPnlPercent,
+    PositionSnapshotDto NewPosition);
+
+public record PositionSnapshotDto(
+    decimal TotalAmount,
+    decimal AverageCostRate,
+    decimal TotalCostTry);
+
+public record ExchangeRateItemDto(
+    string CurrencyCode,
+    decimal BuyRate,
+    decimal SellRate);
+
+// Transaction DTO
+public record TransactionDto(
+    Guid Id,
+    Guid AccountId,
+    string Type,
+    decimal Amount,
+    string Currency,
+    string? Description,
+    DateTime CreatedAt);
 

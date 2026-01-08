@@ -23,5 +23,15 @@ public interface IAccountRepository
     /// Gets an account by IBAN with FOR UPDATE lock for concurrent transaction safety.
     /// </summary>
     Task<Account?> GetByIbanForUpdateAsync(string iban, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gets all accounts with PendingApproval status.
+    /// </summary>
+    Task<List<Account>> GetPendingApprovalsAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Deletes an account from the database.
+    /// </summary>
+    Task DeleteAsync(Guid id, CancellationToken ct = default);
 }
 

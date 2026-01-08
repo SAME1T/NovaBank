@@ -44,13 +44,19 @@ public class AccountsService : IAccountsService
             generatedIban = _ibanGenerator.GenerateIban();
         } while (await _accountRepository.ExistsByIbanAsync(generatedIban, ct));
 
+        // Döviz hesapları (TRY dışındaki) için admin onayı gerekli
+        var initialStatus = request.Currency == Currency.TRY 
+            ? AccountStatus.Active 
+            : AccountStatus.PendingApproval;
+
         var account = new Account(
             request.CustomerId,
             new AccountNo(request.AccountNo),
             new Iban(generatedIban),
             request.Currency,
             new Money(0m, request.Currency),
-            Math.Max(0, request.OverdraftLimit)
+            Math.Max(0, request.OverdraftLimit),
+            initialStatus
         );
 
         await _accountRepository.AddAsync(account, ct);
@@ -63,7 +69,8 @@ public class AccountsService : IAccountsService
             account.Iban.Value,
             account.Currency.ToString(),
             account.Balance.Amount,
-            account.OverdraftLimit
+            account.OverdraftLimit,
+            account.Status.ToString()
         );
 
         return Result<AccountResponse>.Success(response);
@@ -82,7 +89,8 @@ public class AccountsService : IAccountsService
             account.Iban.Value,
             account.Currency.ToString(),
             account.Balance.Amount,
-            account.OverdraftLimit
+            account.OverdraftLimit,
+            account.Status.ToString()
         );
 
         return Result<AccountResponse>.Success(response);
@@ -98,7 +106,8 @@ public class AccountsService : IAccountsService
             a.Iban.Value,
             a.Currency.ToString(),
             a.Balance.Amount,
-            a.OverdraftLimit
+            a.OverdraftLimit,
+            a.Status.ToString()
         )).ToList();
 
         return Result<List<AccountResponse>>.Success(responses);
@@ -117,7 +126,8 @@ public class AccountsService : IAccountsService
             account.Iban.Value,
             account.Currency.ToString(),
             account.Balance.Amount,
-            account.OverdraftLimit
+            account.OverdraftLimit,
+            account.Status.ToString()
         );
 
         return Result<AccountResponse>.Success(response);
@@ -136,7 +146,8 @@ public class AccountsService : IAccountsService
             account.Iban.Value,
             account.Currency.ToString(),
             account.Balance.Amount,
-            account.OverdraftLimit
+            account.OverdraftLimit,
+            account.Status.ToString()
         );
 
         return Result<AccountResponse>.Success(response);
@@ -166,7 +177,8 @@ public class AccountsService : IAccountsService
             a.Iban.Value,
             a.Currency.ToString(),
             a.Balance.Amount,
-            a.OverdraftLimit
+            a.OverdraftLimit,
+            a.Status.ToString()
         )).ToList();
         return Result<List<AccountResponse>>.Success(responses);
     }

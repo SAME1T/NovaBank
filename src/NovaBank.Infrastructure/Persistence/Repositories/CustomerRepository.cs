@@ -107,5 +107,15 @@ public class CustomerRepository : ICustomerRepository
         _context.Customers.Update(entity);
         // SaveChanges will be handled by UnitOfWork
     }
+
+    public async Task DeleteAsync(Guid id, CancellationToken ct = default)
+    {
+        var entity = await _context.Customers.FindAsync(new object[] { id }, ct);
+        if (entity != null)
+        {
+            _context.Customers.Remove(entity);
+            // SaveChanges will be handled by UnitOfWork
+        }
+    }
 }
 

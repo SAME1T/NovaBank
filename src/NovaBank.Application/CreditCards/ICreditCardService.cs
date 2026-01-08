@@ -9,7 +9,7 @@ public interface ICreditCardService
     Task<Result> ApplyForCreditCardAsync(ApplyCreditCardRequest req, CancellationToken ct = default);
     Task<Result<List<CreditCardSummaryResponse>>> GetMyCardsAsync(CancellationToken ct = default);
     Task<Result<List<MyApplicationResponse>>> GetMyApplicationsAsync(CancellationToken ct = default);
-    Task<Result> MakeCardPaymentAsync(Guid cardId, decimal amount, CancellationToken ct = default);
+    Task<Result> MakeCardPaymentAsync(Guid cardId, decimal amount, Guid fromAccountId, CancellationToken ct = default);
     
     // Admin işlemleri
     Task<Result<List<CreditCardApplicationResponse>>> GetPendingApplicationsAsync(CancellationToken ct = default);

@@ -15,6 +15,7 @@ using NovaBank.Application.Notifications;
 using NovaBank.Application.Reports;
 using NovaBank.Application.Transactions;
 using NovaBank.Application.Transfers;
+using NovaBank.Application.CurrencyExchange;
 using NovaBank.Core.Enums;
 using System.Security.Claims;
 
@@ -60,6 +61,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IKycService, KycService>();
         services.AddScoped<IBillPaymentService, BillPaymentService>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<ICurrencyExchangeService, CurrencyExchangeService>();
 
         // Validators
         services.AddValidatorsFromAssembly(typeof(ServiceCollectionExtensions).Assembly);

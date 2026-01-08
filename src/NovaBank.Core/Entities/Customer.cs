@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -175,5 +175,12 @@ namespace NovaBank.Core.Entities
 
         /// <summary>Tam ad.</summary>
         public string FullName => $"{FirstName} {LastName}";
+
+        /// <summary>Kullanıcı rolünü güncelle (sadece Admin tarafından).</summary>
+        public void UpdateRole(UserRole newRole)
+        {
+            Role = newRole;
+            TouchUpdated();
+        }
     }
 }

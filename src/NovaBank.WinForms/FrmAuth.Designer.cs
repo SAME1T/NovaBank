@@ -57,7 +57,7 @@ partial class FrmAuth
             Location = new Point(0, 0),
             Size = new Size(700, 100),
             Dock = DockStyle.Top,
-            Appearance = { BackColor = Color.FromArgb(25, 118, 210) }
+            Appearance = { BackColor = Color.FromArgb(240, 240, 240) }
         };
         
         var lblLoginTitle = new LabelControl() 
@@ -83,16 +83,19 @@ partial class FrmAuth
             Text = "🆔 TC Kimlik No:", 
             Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
         };
+        lblTc.Appearance.Options.UseFont = true;
+        lblTc.Appearance.Options.UseForeColor = true;
         txtLoginTc = new TextEdit() 
         { 
             Location = new Point(25, 60), 
             Size = new Size(590, 40)
         };
-        txtLoginTc.Properties.MaxLength = 11; // 11 haneli TC
-        txtLoginTc.Properties.NullValuePrompt = "TC Kimlik No (11 hane)";
+        txtLoginTc.Properties.MaxLength = 11;
+        txtLoginTc.Properties.NullValuePrompt = "TC Kimlik No";
         txtLoginTc.Properties.NullValuePromptShowForEmptyValue = true;
-        txtLoginTc.Properties.Appearance.Font = new Font("Segoe UI", 11);
-        txtLoginTc.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        txtLoginTc.ForeColor = Color.Black;
+        txtLoginTc.BackColor = Color.FromArgb(250, 250, 250);
+        txtLoginTc.Font = new Font("Segoe UI", 11);
         txtLoginTc.KeyPress += (s, e) => { if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar)) e.Handled = true; };
         
         var lblPassword = new LabelControl() 
@@ -102,27 +105,31 @@ partial class FrmAuth
             Text = "🔒 Şifre:", 
             Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
         };
+        lblPassword.Appearance.Options.UseFont = true;
+        lblPassword.Appearance.Options.UseForeColor = true;
         txtLoginPassword = new TextEdit() 
         { 
             Location = new Point(25, 150), 
-            Size = new Size(560, 40)
+            Size = new Size(555, 40)
         };
         txtLoginPassword.Properties.PasswordChar = '●';
-        txtLoginPassword.Properties.UseSystemPasswordChar = true;
         txtLoginPassword.Properties.NullValuePrompt = "Şifrenizi giriniz";
         txtLoginPassword.Properties.NullValuePromptShowForEmptyValue = true;
-        txtLoginPassword.Properties.Appearance.Font = new Font("Segoe UI", 11);
-        txtLoginPassword.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        txtLoginPassword.ForeColor = Color.Black;
+        txtLoginPassword.BackColor = Color.FromArgb(250, 250, 250);
+        txtLoginPassword.Font = new Font("Segoe UI", 11);
         
         btnShowPassword = new SimpleButton() 
         { 
             Location = new Point(590, 150), 
-            Size = new Size(25, 40), 
+            Size = new Size(40, 40), 
             Text = "👁",
             Appearance = { Font = new Font("Segoe UI", 14) },
             LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
         };
-        btnShowPassword.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        btnShowPassword.Appearance.BackColor = Color.FromArgb(230, 230, 230);
+        btnShowPassword.AppearanceHovered.BackColor = Color.FromArgb(200, 200, 200);
+        btnShowPassword.Appearance.Options.UseFont = true;
         btnShowPassword.Click += BtnShowPassword_Click;
         
         btnLogin = new SimpleButton() 
@@ -192,16 +199,19 @@ partial class FrmAuth
             Text = "🆔 TC Kimlik No:", 
             Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
         };
+        lblRegTc.Appearance.Options.UseFont = true;
+        lblRegTc.Appearance.Options.UseForeColor = true;
         txtRegTc = new TextEdit() 
         { 
             Location = new Point(25, 55), 
             Size = new Size(590, 40)
         };
-        txtRegTc.Properties.MaxLength = 11; // 11 haneli TC
-        txtRegTc.Properties.NullValuePrompt = "TC Kimlik No (11 hane)";
+        txtRegTc.Properties.MaxLength = 11;
+        txtRegTc.Properties.NullValuePrompt = "TC Kimlik No";
         txtRegTc.Properties.NullValuePromptShowForEmptyValue = true;
-        txtRegTc.Properties.Appearance.Font = new Font("Segoe UI", 11);
-        txtRegTc.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegTc.ForeColor = Color.Black;
+        txtRegTc.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegTc.Font = new Font("Segoe UI", 11);
         txtRegTc.KeyPress += (s, e) => { if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar)) e.Handled = true; };
         
         var lblRegAd = new LabelControl() 
@@ -218,8 +228,9 @@ partial class FrmAuth
         };
         txtRegAd.Properties.NullValuePrompt = "Ad";
         txtRegAd.Properties.NullValuePromptShowForEmptyValue = true;
-        txtRegAd.Properties.Appearance.Font = new Font("Segoe UI", 11);
-        txtRegAd.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegAd.ForeColor = Color.Black;
+        txtRegAd.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegAd.Font = new Font("Segoe UI", 11);
         
         var lblRegSoyad = new LabelControl() 
         { 
@@ -235,8 +246,9 @@ partial class FrmAuth
         };
         txtRegSoyad.Properties.NullValuePrompt = "Soyad";
         txtRegSoyad.Properties.NullValuePromptShowForEmptyValue = true;
-        txtRegSoyad.Properties.Appearance.Font = new Font("Segoe UI", 11);
-        txtRegSoyad.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegSoyad.ForeColor = Color.Black;
+        txtRegSoyad.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegSoyad.Font = new Font("Segoe UI", 11);
         
         var lblRegEmail = new LabelControl() 
         { 
@@ -252,8 +264,9 @@ partial class FrmAuth
         };
         txtRegEmail.Properties.NullValuePrompt = "E-posta (opsiyonel)";
         txtRegEmail.Properties.NullValuePromptShowForEmptyValue = true;
-        txtRegEmail.Properties.Appearance.Font = new Font("Segoe UI", 11);
-        txtRegEmail.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegEmail.ForeColor = Color.Black;
+        txtRegEmail.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegEmail.Font = new Font("Segoe UI", 11);
         
         var lblRegTel = new LabelControl() 
         { 
@@ -267,11 +280,12 @@ partial class FrmAuth
             Location = new Point(25, 310), 
             Size = new Size(590, 40)
         };
-        txtRegTel.Properties.MaxLength = 10; // 10 haneli telefon
-        txtRegTel.Properties.NullValuePrompt = "Telefon (10 hane, örn: 5321234567)";
+        txtRegTel.Properties.MaxLength = 10;
+        txtRegTel.Properties.NullValuePrompt = "Telefon (örn: 5321234567)";
         txtRegTel.Properties.NullValuePromptShowForEmptyValue = true;
-        txtRegTel.Properties.Appearance.Font = new Font("Segoe UI", 11);
-        txtRegTel.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegTel.ForeColor = Color.Black;
+        txtRegTel.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegTel.Font = new Font("Segoe UI", 11);
         txtRegTel.KeyPress += (s, e) => { if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar)) e.Handled = true; };
         
         var lblRegPassword = new LabelControl() 
@@ -284,23 +298,25 @@ partial class FrmAuth
         txtRegPassword = new TextEdit() 
         { 
             Location = new Point(25, 395), 
-            Size = new Size(560, 40)
+            Size = new Size(555, 40)
         };
         txtRegPassword.Properties.PasswordChar = '●';
-        txtRegPassword.Properties.UseSystemPasswordChar = true;
         txtRegPassword.Properties.NullValuePrompt = "Şifre (min. 6 karakter)";
         txtRegPassword.Properties.NullValuePromptShowForEmptyValue = true;
-        txtRegPassword.Properties.Appearance.Font = new Font("Segoe UI", 11);
-        txtRegPassword.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegPassword.ForeColor = Color.Black;
+        txtRegPassword.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegPassword.Font = new Font("Segoe UI", 11);
         btnShowRegPassword = new SimpleButton() 
         { 
             Location = new Point(590, 395), 
-            Size = new Size(25, 40), 
+            Size = new Size(40, 40), 
             Text = "👁",
             Appearance = { Font = new Font("Segoe UI", 14) },
             LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
         };
-        btnShowRegPassword.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        btnShowRegPassword.Appearance.BackColor = Color.FromArgb(230, 230, 230);
+        btnShowRegPassword.AppearanceHovered.BackColor = Color.FromArgb(200, 200, 200);
+        btnShowRegPassword.Appearance.Options.UseFont = true;
         btnShowRegPassword.Click += BtnShowRegPassword_Click;
         
         var lblRegPasswordConfirm = new LabelControl() 
@@ -313,14 +329,27 @@ partial class FrmAuth
         txtRegPasswordConfirm = new TextEdit() 
         { 
             Location = new Point(25, 480), 
-            Size = new Size(590, 40)
+            Size = new Size(555, 40)
         };
         txtRegPasswordConfirm.Properties.PasswordChar = '●';
-        txtRegPasswordConfirm.Properties.UseSystemPasswordChar = true;
         txtRegPasswordConfirm.Properties.NullValuePrompt = "Şifre (tekrar)";
         txtRegPasswordConfirm.Properties.NullValuePromptShowForEmptyValue = true;
-        txtRegPasswordConfirm.Properties.Appearance.Font = new Font("Segoe UI", 11);
-        txtRegPasswordConfirm.Properties.Appearance.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegPasswordConfirm.ForeColor = Color.Black;
+        txtRegPasswordConfirm.BackColor = Color.FromArgb(250, 250, 250);
+        txtRegPasswordConfirm.Font = new Font("Segoe UI", 11);
+        
+        var btnShowRegPasswordConfirm = new SimpleButton() 
+        { 
+            Location = new Point(590, 480), 
+            Size = new Size(40, 40), 
+            Text = "👁",
+            Appearance = { Font = new Font("Segoe UI", 14) },
+            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
+        };
+        btnShowRegPasswordConfirm.Appearance.BackColor = Color.FromArgb(230, 230, 230);
+        btnShowRegPasswordConfirm.AppearanceHovered.BackColor = Color.FromArgb(200, 200, 200);
+        btnShowRegPasswordConfirm.Appearance.Options.UseFont = true;
+        btnShowRegPasswordConfirm.Click += BtnShowRegPasswordConfirm_Click;
         
         btnRegister = new SimpleButton() 
         { 
@@ -336,7 +365,7 @@ partial class FrmAuth
         btnRegister.AppearancePressed.BackColor = Color.FromArgb(56, 142, 60);
         btnRegister.Click += btnRegister_Click;
         
-        pnlRegisterContent.Controls.AddRange(new Control[] { lblRegTc, txtRegTc, lblRegAd, txtRegAd, lblRegSoyad, txtRegSoyad, lblRegEmail, txtRegEmail, lblRegTel, txtRegTel, lblRegPassword, txtRegPassword, btnShowRegPassword, lblRegPasswordConfirm, txtRegPasswordConfirm, btnRegister });
+        pnlRegisterContent.Controls.AddRange(new Control[] { lblRegTc, txtRegTc, lblRegAd, txtRegAd, lblRegSoyad, txtRegSoyad, lblRegEmail, txtRegEmail, lblRegTel, txtRegTel, lblRegPassword, txtRegPassword, btnShowRegPassword, lblRegPasswordConfirm, txtRegPasswordConfirm, btnShowRegPasswordConfirm, btnRegister });
         tabRegister.Controls.Add(pnlRegisterHeader);
         tabRegister.Controls.Add(pnlRegisterContent);
     }

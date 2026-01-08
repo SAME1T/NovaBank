@@ -13,5 +13,10 @@ public interface ICustomerRepository
     Task AddAsync(Customer entity, CancellationToken ct = default);
     Task UpdateAsync(Customer entity, CancellationToken ct = default);
     Task<Customer?> FindByEmailOrNationalIdAsync(string emailOrNationalId, CancellationToken ct = default);
+    
+    /// <summary>
+    /// Deletes a customer from the database.
+    /// </summary>
+    Task DeleteAsync(Guid id, CancellationToken ct = default);
 }
 

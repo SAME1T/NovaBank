@@ -40,8 +40,8 @@ public class AdminService : IAdminService
 
     public async Task<Result<List<CustomerSummaryResponse>>> SearchCustomersAsync(string? searchTerm, CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
-            return Result<List<CustomerSummaryResponse>>.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+        if (!_currentUser.IsAdminOrBranchManager)
+            return Result<List<CustomerSummaryResponse>>.Failure(ErrorCodes.Unauthorized, "Yönetici yetkisi gerekli.");
 
         var customers = await _customerRepository.SearchAsync(searchTerm, ct);
         var responses = customers.Select(c =>
@@ -65,8 +65,8 @@ public class AdminService : IAdminService
 
     public async Task<Result<List<AccountAdminResponse>>> GetCustomerAccountsAsync(Guid customerId, CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
-            return Result<List<AccountAdminResponse>>.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+        if (!_currentUser.IsAdminOrBranchManager)
+            return Result<List<AccountAdminResponse>>.Failure(ErrorCodes.Unauthorized, "Yönetici yetkisi gerekli.");
 
         var accounts = await _accountRepository.GetByCustomerIdAsync(customerId, ct);
         var responses = accounts.Select(a => new AccountAdminResponse(
@@ -83,8 +83,8 @@ public class AdminService : IAdminService
 
     public async Task<Result> UpdateOverdraftLimitAsync(Guid accountId, decimal overdraftLimit, CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
-            return Result.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+        if (!_currentUser.IsAdminOrBranchManager)
+            return Result.Failure(ErrorCodes.Unauthorized, "Yönetici yetkisi gerekli.");
 
         if (overdraftLimit < 0)
             return Result.Failure(ErrorCodes.Validation, "Overdraft limit negatif olamaz.");
@@ -114,8 +114,12 @@ public class AdminService : IAdminService
 
     public async Task<Result> UpdateAccountStatusAsync(Guid accountId, AccountStatus status, CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
-            return Result.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+        if (!_currentUser.IsAdminOrBranchManager)
+            return Result.Failure(ErrorCodes.Unauthorized, "Yönetici yetkisi gerekli.");
+
+        // Hesap kapatma (Closed) işlemi sadece Admin yapabilir
+        if (status == AccountStatus.Closed && !_currentUser.IsAdmin)
+            return Result.Failure(ErrorCodes.Unauthorized, "Hesap kapatma işlemi sadece Admin tarafından yapılabilir.");
 
         var result = await _unitOfWork.ExecuteInTransactionAsync(async (transactionCt) =>
         {
@@ -135,7 +139,7 @@ public class AdminService : IAdminService
             switch (status)
             {
                 case AccountStatus.Active:
-                    account.Activate();
+                    account.Activate(); // PendingApproval -> Active için de Activate çalışır
                     break;
                 case AccountStatus.Frozen:
                     account.Freeze();
@@ -143,6 +147,9 @@ public class AdminService : IAdminService
                 case AccountStatus.Closed:
                     account.Close();
                     break;
+                case AccountStatus.PendingApproval:
+                    // PendingApproval'a geri döndürülmez, sadece bilgi için
+                    return Result.Failure(ErrorCodes.InvalidOperation, "Hesap 'Onay Bekliyor' durumuna geri döndürülemez.");
             }
 
             await _accountRepository.UpdateAsync(account, transactionCt);
@@ -177,8 +184,12 @@ public class AdminService : IAdminService
 
     public async Task<Result<UpdateCustomerActiveResponse>> UpdateCustomerActiveAsync(Guid customerId, bool isActive, CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
-            return Result<UpdateCustomerActiveResponse>.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+        if (!_currentUser.IsAdminOrBranchManager)
+            return Result<UpdateCustomerActiveResponse>.Failure(ErrorCodes.Unauthorized, "Yönetici yetkisi gerekli.");
+        
+        // Kullanıcı deaktive etme (silme benzeri) sadece Admin yapabilir
+        if (!isActive && !_currentUser.IsAdmin)
+            return Result<UpdateCustomerActiveResponse>.Failure(ErrorCodes.Unauthorized, "Kullanıcı deaktive etme işlemi sadece Admin tarafından yapılabilir.");
 
         var result = await _unitOfWork.ExecuteInTransactionAsync(async (transactionCt) =>
         {
@@ -214,8 +225,8 @@ public class AdminService : IAdminService
 
     public async Task<Result<ResetCustomerPasswordResponse>> ResetCustomerPasswordAsync(Guid customerId, CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
-            return Result<ResetCustomerPasswordResponse>.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+        if (!_currentUser.IsAdminOrBranchManager)
+            return Result<ResetCustomerPasswordResponse>.Failure(ErrorCodes.Unauthorized, "Yönetici yetkisi gerekli.");
 
         var result = await _unitOfWork.ExecuteInTransactionAsync(async (transactionCt) =>
         {
@@ -295,8 +306,8 @@ public class AdminService : IAdminService
 
     public async Task<Result<List<AuditLogResponse>>> GetAuditLogsAsync(DateTime? from, DateTime? to, string? search, string? action, bool? success, int take, CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
-            return Result<List<AuditLogResponse>>.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+        if (!_currentUser.IsAdminOrBranchManager)
+            return Result<List<AuditLogResponse>>.Failure(ErrorCodes.Unauthorized, "Yönetici yetkisi gerekli.");
 
         var logs = await _auditLogRepository.QueryAsync(from, to, search, action, success, take, ct);
 
@@ -318,25 +329,66 @@ public class AdminService : IAdminService
 
     public async Task<Result<List<PendingApprovalResponse>>> GetPendingApprovalsAsync(CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
-            return Result<List<PendingApprovalResponse>>.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+        if (!_currentUser.IsAdminOrBranchManager)
+            return Result<List<PendingApprovalResponse>>.Failure(ErrorCodes.Unauthorized, "Yönetici yetkisi gerekli.");
 
+        var responses = new List<PendingApprovalResponse>();
+
+        // Müşteri onayları
         var customers = await _customerRepository.GetPendingApprovalsAsync(ct);
-        var responses = customers.Select(c => new PendingApprovalResponse(
+        responses.AddRange(customers.Select(c => new PendingApprovalResponse(
             c.Id,
+            PendingItemType.Customer,
             $"{c.FirstName} {c.LastName}",
             c.NationalId.Value,
             c.Email ?? "",
             c.CreatedAt
-        )).ToList();
+        )));
 
-        return Result<List<PendingApprovalResponse>>.Success(responses);
+        // Hesap onayları
+        var accounts = await _accountRepository.GetPendingApprovalsAsync(ct);
+        if (accounts.Count > 0)
+        {
+            // Customer bilgilerini toplu olarak al
+            var customerIds = accounts.Select(a => a.CustomerId).Distinct().ToList();
+            var accountCustomers = new Dictionary<Guid, Customer>();
+            foreach (var customerId in customerIds)
+            {
+                var customer = await _customerRepository.GetByIdAsync(customerId, ct);
+                if (customer != null)
+                    accountCustomers[customerId] = customer;
+            }
+
+            // Hesap onaylarını response'a ekle
+            responses.AddRange(accounts.Select(a =>
+            {
+                var customer = accountCustomers.GetValueOrDefault(a.CustomerId);
+                if (customer == null)
+                    return null;
+
+                return new PendingApprovalResponse(
+                    a.CustomerId,
+                    PendingItemType.Account,
+                    $"{customer.FirstName} {customer.LastName}",
+                    customer.NationalId.Value,
+                    customer.Email ?? "",
+                    a.CreatedAt,
+                    AccountId: a.Id,
+                    Iban: a.Iban.Value,
+                    Currency: a.Currency.ToString()
+                );
+            }).Where(r => r != null)!);
+        }
+
+        // Tarihe göre sırala
+        var sortedResponses = responses.OrderBy(r => r.CreatedAt).ToList();
+        return Result<List<PendingApprovalResponse>>.Success(sortedResponses);
     }
 
     public async Task<Result<ApproveCustomerResponse>> ApproveCustomerAsync(Guid customerId, CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
-            return Result<ApproveCustomerResponse>.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+        if (!_currentUser.IsAdminOrBranchManager)
+            return Result<ApproveCustomerResponse>.Failure(ErrorCodes.Unauthorized, "Yönetici yetkisi gerekli.");
 
         var result = await _unitOfWork.ExecuteInTransactionAsync(async (transactionCt) =>
         {
@@ -368,8 +420,8 @@ public class AdminService : IAdminService
 
     public async Task<Result> RejectCustomerAsync(Guid customerId, CancellationToken ct = default)
     {
-        if (!_currentUser.IsAdmin)
-            return Result.Failure(ErrorCodes.Unauthorized, "Admin yetkisi gerekli.");
+        if (!_currentUser.IsAdminOrBranchManager)
+            return Result.Failure(ErrorCodes.Unauthorized, "Yönetici yetkisi gerekli.");
 
         var result = await _unitOfWork.ExecuteInTransactionAsync(async (transactionCt) =>
         {
@@ -396,6 +448,195 @@ public class AdminService : IAdminService
         }
 
         return result;
+    }
+
+    public async Task<Result<CreateBranchManagerResponse>> CreateBranchManagerAsync(CreateBranchManagerRequest request, CancellationToken ct = default)
+    {
+        // BranchManager oluşturma sadece Admin yapabilir
+        if (!_currentUser.IsAdmin)
+            return Result<CreateBranchManagerResponse>.Failure(ErrorCodes.Unauthorized, "BranchManager oluşturma yetkisi sadece Admin'de vardır.");
+
+        // Validasyonlar
+        if (string.IsNullOrWhiteSpace(request.FirstName) || string.IsNullOrWhiteSpace(request.LastName))
+            return Result<CreateBranchManagerResponse>.Failure(ErrorCodes.Validation, "Ad/Soyad boş olamaz.");
+
+        if (string.IsNullOrWhiteSpace(request.NationalId) || request.NationalId.Length != 11)
+            return Result<CreateBranchManagerResponse>.Failure(ErrorCodes.Validation, "TC Kimlik No 11 haneli olmalıdır.");
+
+        if (string.IsNullOrWhiteSpace(request.Email))
+            return Result<CreateBranchManagerResponse>.Failure(ErrorCodes.Validation, "E-posta adresi gereklidir.");
+
+        if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
+            return Result<CreateBranchManagerResponse>.Failure(ErrorCodes.Validation, "Şifre en az 6 karakter olmalıdır.");
+
+        // TC Kimlik No zaten kayıtlı mı?
+        if (await _customerRepository.ExistsByTcknAsync(request.NationalId, ct))
+            return Result<CreateBranchManagerResponse>.Failure(ErrorCodes.Conflict, "Bu TC Kimlik No ile kayıtlı bir kullanıcı zaten var.");
+
+        var result = await _unitOfWork.ExecuteInTransactionAsync(async (transactionCt) =>
+        {
+            var customer = new Customer(
+                new NovaBank.Core.ValueObjects.NationalId(request.NationalId),
+                request.FirstName,
+                request.LastName,
+                request.Email,
+                request.Phone ?? string.Empty,
+                request.Password,
+                UserRole.BranchManager // Direkt BranchManager rolü ile oluştur
+            );
+
+            // BranchManager otomatik olarak onaylı ve aktif
+            customer.Approve();
+            customer.Activate();
+
+            await _customerRepository.AddAsync(customer, transactionCt);
+
+            var response = new CreateBranchManagerResponse(
+                customer.Id,
+                customer.FullName,
+                customer.Role.ToString()
+            );
+
+            return Result<CreateBranchManagerResponse>.Success(response);
+        }, ct);
+
+        if (result.IsSuccess && result.Value != null)
+        {
+            await _auditLogger.LogAsync(
+                "BranchManagerCreated",
+                success: true,
+                entityType: "Customer",
+                entityId: result.Value.CustomerId.ToString(),
+                summary: $"Şube Bankacı Yöneticisi oluşturuldu: {result.Value.FullName}",
+                metadata: new { customerId = result.Value.CustomerId, fullName = result.Value.FullName },
+                ct: ct);
+        }
+
+        return result;
+    }
+
+    public async Task<Result<UpdateCustomerRoleResponse>> UpdateCustomerRoleAsync(Guid customerId, UserRole newRole, CancellationToken ct = default)
+    {
+        // Rol güncelleme sadece Admin yapabilir
+        if (!_currentUser.IsAdmin)
+            return Result<UpdateCustomerRoleResponse>.Failure(ErrorCodes.Unauthorized, "Rol güncelleme yetkisi sadece Admin'de vardır.");
+
+        // Admin rolü atanamaz (güvenlik)
+        if (newRole == UserRole.Admin)
+            return Result<UpdateCustomerRoleResponse>.Failure(ErrorCodes.Unauthorized, "Admin rolü atanamaz.");
+
+        var result = await _unitOfWork.ExecuteInTransactionAsync(async (transactionCt) =>
+        {
+            var customer = await _customerRepository.GetByIdAsync(customerId, transactionCt);
+            if (customer is null)
+                return Result<UpdateCustomerRoleResponse>.Failure(ErrorCodes.NotFound, "Müşteri bulunamadı.");
+
+            // Admin'in rolü değiştirilemez
+            if (customer.Role == UserRole.Admin)
+                return Result<UpdateCustomerRoleResponse>.Failure(ErrorCodes.Unauthorized, "Admin kullanıcısının rolü değiştirilemez.");
+
+            var oldRole = customer.Role;
+            customer.UpdateRole(newRole);
+            await _customerRepository.UpdateAsync(customer, transactionCt);
+
+            var response = new UpdateCustomerRoleResponse(customerId, newRole.ToString());
+            return Result<UpdateCustomerRoleResponse>.Success(response);
+        }, ct);
+
+        if (result.IsSuccess)
+        {
+            await _auditLogger.LogAsync(
+                "CustomerRoleUpdated",
+                success: true,
+                entityType: "Customer",
+                entityId: customerId.ToString(),
+                summary: $"Kullanıcı rolü güncellendi: {newRole}",
+                metadata: new { customerId, newRole = newRole.ToString() },
+                ct: ct);
+        }
+
+        return result;
+    }
+
+    public async Task<Result> DeleteAccountAsync(Guid accountId, CancellationToken ct = default)
+    {
+        // Hesap silme sadece Admin yapabilir
+        if (!_currentUser.IsAdmin)
+            return Result.Failure(ErrorCodes.Unauthorized, "Hesap silme yetkisi sadece Admin'de vardır.");
+
+        var account = await _accountRepository.GetByIdAsync(accountId, ct);
+        if (account is null)
+            return Result.Failure(ErrorCodes.NotFound, "Hesap bulunamadı.");
+
+        var iban = account.Iban.Value;
+        var currency = account.Currency.ToString();
+        var customerId = account.CustomerId;
+
+        // Önce audit log kaydet (silmeden önce)
+        await _auditLogger.LogAsync(
+            "AccountDeleted",
+            success: true,
+            entityType: "Account",
+            entityId: accountId.ToString(),
+            summary: $"Hesap silindi - IBAN: {iban}, Para Birimi: {currency}",
+            metadata: new { accountId, iban, currency, customerId },
+            ct: ct);
+
+        // Hesabı sil
+        await _accountRepository.DeleteAsync(accountId, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return Result.Success();
+    }
+
+    public async Task<Result> DeleteCustomerAsync(Guid customerId, CancellationToken ct = default)
+    {
+        // Müşteri silme sadece Admin yapabilir
+        if (!_currentUser.IsAdmin)
+            return Result.Failure(ErrorCodes.Unauthorized, "Müşteri silme yetkisi sadece Admin'de vardır.");
+
+        var customer = await _customerRepository.GetByIdAsync(customerId, ct);
+        if (customer is null)
+            return Result.Failure(ErrorCodes.NotFound, "Müşteri bulunamadı.");
+
+        // Admin kullanıcısı silinemez
+        if (customer.Role == UserRole.Admin)
+            return Result.Failure(ErrorCodes.Unauthorized, "Admin kullanıcısı silinemez.");
+
+        var fullName = $"{customer.FirstName} {customer.LastName}";
+        var nationalId = customer.NationalId.Value;
+
+        // Önce müşterinin tüm hesaplarını sil
+        var accounts = await _accountRepository.GetByCustomerIdAsync(customerId, ct);
+        foreach (var account in accounts)
+        {
+            await _auditLogger.LogAsync(
+                "AccountDeleted",
+                success: true,
+                entityType: "Account",
+                entityId: account.Id.ToString(),
+                summary: $"Müşteri silinirken hesap silindi - IBAN: {account.Iban.Value}",
+                metadata: new { accountId = account.Id, iban = account.Iban.Value, customerId },
+                ct: ct);
+
+            await _accountRepository.DeleteAsync(account.Id, ct);
+        }
+
+        // Audit log kaydet (müşteri silinmeden önce)
+        await _auditLogger.LogAsync(
+            "CustomerDeleted",
+            success: true,
+            entityType: "Customer",
+            entityId: customerId.ToString(),
+            summary: $"Müşteri silindi: {fullName} (TC: {nationalId})",
+            metadata: new { customerId, fullName, nationalId, deletedAccountsCount = accounts.Count },
+            ct: ct);
+
+        // Müşteriyi sil
+        await _customerRepository.DeleteAsync(customerId, ct);
+        await _unitOfWork.SaveChangesAsync(ct);
+
+        return Result.Success();
     }
 }
 

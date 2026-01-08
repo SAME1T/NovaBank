@@ -17,7 +17,8 @@ public sealed record RejectCreditCardRequest(
 );
 
 public sealed record CardPaymentRequest(
-    decimal Amount
+    decimal Amount,
+    Guid FromAccountId
 );
 
 // --- Responses ---
