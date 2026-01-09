@@ -1,4 +1,4 @@
-#nullable enable
+﻿#nullable enable
 
 using NovaBank.WinForms.Services;
 using NovaBank.Contracts.Accounts;
@@ -28,7 +28,7 @@ public partial class FrmMain : XtraForm
 {
 
     private readonly ApiClient _api = new();
-    private readonly Services.BankaciAiService _chatbotService = new();
+    
 
     private List<AccountResponse> _cachedAccounts = new();
 
@@ -2440,33 +2440,13 @@ public partial class FrmMain : XtraForm
 
             // ===== BAÅLIK =====
 
-            var lblAdminTitle = new LabelControl()
-
-            {
-
-                Location = new Point(20, 10),
-
-                Size = new Size(500, 35),
-
-                Text = Session.IsAdmin ? "🔧 Admin Yönetim Paneli" : "👔 Şube Yönetim Paneli",
-
-                Appearance = { Font = new Font("Segoe UI", 18, FontStyle.Bold), ForeColor = Session.IsAdmin ? Color.FromArgb(25, 118, 210) : Color.FromArgb(63, 81, 181) }
-
-            };
+            var lblAdminTitle = new LabelControl() { Location = new Point(20, 10), Size = new Size(500, 40), Text = Session.IsAdmin ? "Yönetim Paneli" : "Şube Paneli", Appearance = { Font = new Font("Segoe UI", 22, FontStyle.Bold), ForeColor = Color.FromArgb(20, 33, 61) } };
 
             // ===== ALT SEKMELER =====
 
-            tabAdminSub = new XtraTabControl()
-
-            {
-
-                Location = new Point(20, 50),
-
-                Size = new Size(1240, 740),
-
-                HeaderLocation = DevExpress.XtraTab.TabHeaderLocation.Top
-
-            };
+            tabAdminSub = new XtraTabControl() { Location = new Point(20, 60), Size = new Size(1240, 730), HeaderLocation = DevExpress.XtraTab.TabHeaderLocation.Top };
+        tabAdminSub.LookAndFeel.UseDefaultLookAndFeel = false;
+        tabAdminSub.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
 
             tabAdminUsers = new XtraTabPage() { Text = "👥 Müşteri Yönetimi" };
 
@@ -2504,7 +2484,7 @@ public partial class FrmMain : XtraForm
 
                 Size = new Size(1200, 300),
 
-                Appearance = { BackColor = Color.FromArgb(255, 248, 225), BorderColor = Color.FromArgb(255, 152, 0) }
+                Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 235, 240) }
 
             };
 
@@ -2536,7 +2516,7 @@ public partial class FrmMain : XtraForm
 
             };
 
-            btnRefreshPending.Appearance.BackColor = Color.FromArgb(255, 152, 0);
+            btnRefreshPending.Appearance.BackColor = Color.FromArgb(255, 152, 0); btnRefreshPending.Cursor = Cursors.Hand;
 
             btnRefreshPending.Click += BtnRefreshPending_Click;
 
@@ -2554,7 +2534,7 @@ public partial class FrmMain : XtraForm
 
             };
 
-            btnApproveCustomer.Appearance.BackColor = Color.FromArgb(76, 175, 80);
+            btnApproveCustomer.Appearance.BackColor = Color.FromArgb(46, 204, 113); btnApproveCustomer.Cursor = Cursors.Hand;
 
             btnApproveCustomer.Click += BtnApproveCustomer_Click;
 
@@ -2572,7 +2552,7 @@ public partial class FrmMain : XtraForm
 
             };
 
-            btnRejectCustomer.Appearance.BackColor = Color.FromArgb(244, 67, 54);
+            btnRejectCustomer.Appearance.BackColor = Color.FromArgb(231, 76, 60); btnRejectCustomer.Cursor = Cursors.Hand;
 
             btnRejectCustomer.Click += BtnRejectCustomer_Click;
 
@@ -2644,7 +2624,7 @@ public partial class FrmMain : XtraForm
 
                 Size = new Size(200, 28),
 
-                Text = "ğŸ” Müşteri Arama",
+                Text = "” Müşteri Arama",
 
                 Appearance = { Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = Color.FromArgb(25, 118, 210) }
 
@@ -2670,7 +2650,7 @@ public partial class FrmMain : XtraForm
 
                 Size = new Size(120, 38),
 
-                Text = "ğŸ” Ara",
+                Text = "” Ara",
 
                 Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.White }
 
@@ -2862,7 +2842,7 @@ public partial class FrmMain : XtraForm
 
             Size = new Size(140, 40),
 
-            Text = "ğŸ”„ Yenile",
+            Text = "”„ Yenile",
 
             Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.White }
 
@@ -4478,7 +4458,7 @@ public partial class FrmMain : XtraForm
 
             var search = txtAuditSearch?.Text?.Trim();
 
-            // Action mapping: "Hepsi" veya boÅŸ ise null
+            // Action mapping: "Hepsi" veya boş ise null
 
             var action = cmbAuditAction?.EditValue?.ToString();
 
@@ -5164,7 +5144,7 @@ public partial class FrmMain : XtraForm
 
             Size = new Size(120, 30),
 
-            Text = "ğŸ”„ Yenile",
+            Text = "”„ Yenile",
 
             Appearance = { Font = new Font("Segoe UI", 9, FontStyle.Bold), ForeColor = Color.White }
 
@@ -5716,7 +5696,7 @@ public partial class FrmMain : XtraForm
 
             Location = new Point(20, 15),
 
-            Text = "ğŸ” Fatura Sorgula",
+            Text = "” Fatura Sorgula",
 
             Appearance = { Font = new Font("Segoe UI", 14, FontStyle.Bold), ForeColor = Color.FromArgb(25, 118, 210) }
 
@@ -5778,7 +5758,7 @@ public partial class FrmMain : XtraForm
 
             Size = new Size(140, 35),
 
-            Text = "ğŸ” Sorgula",
+            Text = "” Sorgula",
 
             Appearance = { Font = new Font("Segoe UI", 10, FontStyle.Bold), ForeColor = Color.White }
 
@@ -7382,165 +7362,97 @@ public partial class FrmMain : XtraForm
     {
 
         var currencyColor = account.Currency switch
-
         {
-
-            "TRY" => Color.FromArgb(25, 118, 210),
-
-            "USD" => Color.FromArgb(76, 175, 80),
-
-            "EUR" => Color.FromArgb(156, 39, 176),
-
-            "GBP" => Color.FromArgb(244, 67, 54),
-
-            _ => Color.FromArgb(100, 100, 100)
-
+            "TRY" => Color.FromArgb(0, 120, 215), // Modern Blue
+            "USD" => Color.FromArgb(46, 204, 113), // Emerald Green
+            "EUR" => Color.FromArgb(155, 89, 182), // Amethyst Purple
+            "GBP" => Color.FromArgb(231, 76, 60),  // Alizarin Red
+            _ => Color.FromArgb(120, 130, 140)
         };
 
         var currencySymbol = account.Currency switch
-
         {
-
             "TRY" => "₺",
-
             "USD" => "$",
-
             "EUR" => "€",
-
-            "GBP" => "Â£",
-
+            "GBP" => "£",
             _ => account.Currency
-
         };
 
         var card = new System.Windows.Forms.Panel
-
         {
-
-            Size = new Size(250, 145),
-
-            Margin = new Padding(8),
-
+            Size = new Size(260, 150),
+            Margin = new Padding(12),
             BackColor = Color.White,
-
-            BorderStyle = BorderStyle.FixedSingle,
-
             Cursor = Cursors.Hand,
-
             Tag = account
-
         };
 
-        // Üst renk şeridi
-
-        var topStrip = new System.Windows.Forms.Panel
-
+        var bottomStrip = new System.Windows.Forms.Panel
         {
-
-            Dock = DockStyle.Top,
-
-            Height = 6,
-
+            Dock = DockStyle.Bottom,
+            Height = 4,
             BackColor = currencyColor
-
         };
-
-        // Para birimi başlık
 
         var lblCurrency = new Label
-
         {
-
-            Text = $"{currencySymbol} {account.Currency}",
-
-            Font = new Font("Segoe UI", 11, FontStyle.Bold),
-
-            ForeColor = currencyColor,
-
-            Location = new Point(12, 14),
-
+            Text = $"{account.Currency}",
+            Font = new Font("Segoe UI", 10, FontStyle.Bold),
+            ForeColor = Color.FromArgb(100, 110, 128),
+            Location = new Point(15, 15),
             AutoSize = true
-
         };
 
-        // Bakiye
+        var lblSymbol = new Label
+        {
+            Text = currencySymbol,
+            Font = new Font("Segoe UI", 16, FontStyle.Bold),
+            ForeColor = currencyColor,
+            Location = new Point(220, 10),
+            AutoSize = true
+        };
 
         var lblBalance = new Label
-
         {
-
             Text = $"{account.Balance:N2}",
-
-            Font = new Font("Segoe UI", 18, FontStyle.Bold),
-
-            ForeColor = Color.FromArgb(40, 40, 40),
-
-            Location = new Point(12, 38),
-
+            Font = new Font("Segoe UI", 20, FontStyle.Bold),
+            ForeColor = Color.FromArgb(20, 33, 61),
+            Location = new Point(15, 42),
             AutoSize = true
-
         };
 
         // Kullanılabilir Bakiye
-
         var available = account.Balance + account.OverdraftLimit;
-
         var lblAvailable = new Label
-
         {
-
             Text = $"Kullanılabilir: {available:N2}",
-
-            Font = new Font("Segoe UI", 9),
-
-            ForeColor = Color.FromArgb(120, 120, 120),
-
-            Location = new Point(12, 70),
-
+            Font = new Font("Segoe UI", 8.5F),
+            ForeColor = Color.FromArgb(150, 160, 170),
+            Location = new Point(15, 78),
             AutoSize = true
-
         };
 
-        // IBAN (kısa)
-
-        var shortIban = account.Iban.Length > 20 ? account.Iban.Substring(0, 12) + "..." + account.Iban.Substring(account.Iban.Length - 6) : account.Iban;
-
+        var shortIban = account.Iban.Length > 20 ? account.Iban.Substring(0, 10) + "..." + account.Iban.Substring(account.Iban.Length - 4) : account.Iban;
         var lblIbanShort = new Label
-
         {
-
             Text = shortIban,
-
             Font = new Font("Consolas", 8.5F),
-
-            ForeColor = Color.FromArgb(100, 100, 100),
-
-            Location = new Point(12, 92),
-
+            ForeColor = Color.FromArgb(140, 150, 160),
+            Location = new Point(15, 105),
             AutoSize = true
-
         };
-
-        // Kopyala butonu
 
         var btnCopy = new Button
-
         {
-
-            Text = "ğŸ“‹",
-
+            Text = "📋",
             Font = new Font("Segoe UI", 9),
-
-            Size = new Size(30, 24),
-
-            Location = new Point(205, 90),
-
+            Size = new Size(28, 28),
+            Location = new Point(215, 100),
             FlatStyle = FlatStyle.Flat,
-
+            BackColor = Color.FromArgb(245, 247, 250),
             Cursor = Cursors.Hand,
-
             Tag = account.Iban
-
         };
 
         btnCopy.FlatAppearance.BorderSize = 0;
@@ -7558,11 +7470,11 @@ public partial class FrmMain : XtraForm
         // Durum - Status'a göre renk ve metin belirle
         var (statusText, statusColor) = account.Status switch
         {
-            "Active" => ("● Aktif", Color.FromArgb(76, 175, 80)),
-            "PendingApproval" => ("⏳ Onay Bekliyor", Color.FromArgb(255, 152, 0)),
-            "Frozen" => ("❄️ Dondurulmuş", Color.FromArgb(33, 150, 243)),
-            "Closed" => ("⛔ Kapalı", Color.FromArgb(244, 67, 54)),
-            _ => ("● Aktif", Color.FromArgb(76, 175, 80))
+            "Active" => ("● Aktif", Color.FromArgb(46, 204, 113)),
+            "PendingApproval" => ("⏳ Onay Bekliyor", Color.FromArgb(243, 156, 18)),
+            "Frozen" => ("❄️ Dondurulmuş", Color.FromArgb(52, 152, 219)),
+            "Closed" => ("⛔ Kapalı", Color.FromArgb(231, 76, 60)),
+            _ => ("● Aktif", Color.FromArgb(46, 204, 113))
         };
 
         var lblStatus = new Label
@@ -7581,7 +7493,8 @@ public partial class FrmMain : XtraForm
 
         };
 
-        card.Controls.AddRange(new Control[] { topStrip, lblCurrency, lblBalance, lblAvailable, lblIbanShort, btnCopy, lblStatus });
+        card.Controls.AddRange(new Control[] { bottomStrip, lblCurrency, lblSymbol, lblBalance, lblAvailable, lblIbanShort, btnCopy, lblStatus });
+        card.BorderStyle = System.Windows.Forms.BorderStyle.None;
 
         // Kart seçimi
 
@@ -7639,7 +7552,7 @@ public partial class FrmMain : XtraForm
 
         // Seçili kartı vurgula
 
-        card.BackColor = Color.FromArgb(232, 245, 253);
+        card.BackColor = Color.FromArgb(235, 245, 255);
 
         // Dropdown'ları güncelle
 
@@ -8090,24 +8003,53 @@ public partial class FrmMain : XtraForm
     
     private void CreateSidebar()
     {
-        // Sidebar panel - Sabit genişlik, koyu mavi renk
+        // Sidebar panel - Modern Dark Space Blue
         pnlSidebar = new PanelControl()
         {
             Location = new Point(0, 0),
             Size = new Size(SIDEBAR_WIDTH, this.Height - (statusStrip?.Height ?? 0)),
-            Appearance = { BackColor = Color.FromArgb(25, 55, 95), BorderColor = Color.FromArgb(35, 70, 120) }
+            Appearance = { BackColor = Color.FromArgb(20, 33, 61), BorderColor = Color.FromArgb(30, 45, 80) }
         };
         pnlSidebar.LookAndFeel.UseDefaultLookAndFeel = false;
         pnlSidebar.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
+        pnlSidebar.Appearance.Options.UseBackColor = true;
+        pnlSidebar.Appearance.Options.UseBorderColor = true;
+
+        // Branding Area
+        var pnlLogo = new PanelControl()
+        {
+            Dock = DockStyle.Top,
+            Height = 80,
+            Appearance = { BackColor = Color.Transparent, BorderColor = Color.Transparent }
+        };
+        pnlLogo.LookAndFeel.UseDefaultLookAndFeel = false;
+        pnlLogo.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
         
+        var lblLogo = new LabelControl()
+        {
+            Text = "NOVA BANK",
+            Location = new Point(15, 25),
+            Appearance = { Font = new Font("Segoe UI", 16, FontStyle.Bold), ForeColor = Color.White },
+            AutoSizeMode = LabelAutoSizeMode.None,
+            Size = new Size(SIDEBAR_WIDTH - 30, 35)
+        };
+        var lblLogoSub = new LabelControl()
+        {
+            Text = "Digital Banking",
+            Location = new Point(15, 52),
+            Appearance = { Font = new Font("Segoe UI", 8, FontStyle.Regular), ForeColor = Color.FromArgb(150, 160, 180) }
+        };
+        pnlLogo.Controls.AddRange(new Control[] { lblLogo, lblLogoSub });
+        pnlSidebar.Controls.Add(pnlLogo);
+
         // Tooltip artık kullanılmayacak ama null hatası vermesin diye oluşturalım
         lblSidebarTooltip = new LabelControl() { Visible = false };
         this.Controls.Add(lblSidebarTooltip);
         
         // Menü öğeleri
-        int yPos = 15;
-        const int itemHeight = 45;
-        const int spacing = 5;
+        int yPos = 100;
+        const int itemHeight = 48;
+        const int spacing = 4;
         
         btnSidebarAccounts = CreateSidebarButton("🏦", "Hesaplarım", yPos, tabMyAccounts);
         yPos += itemHeight + spacing;
@@ -8115,7 +8057,7 @@ public partial class FrmMain : XtraForm
         btnSidebarMoneyOps = CreateSidebarButton("💰", "Para İşlemleri", yPos, tabDw);
         yPos += itemHeight + spacing;
         
-        btnSidebarTransfer = CreateSidebarButton("↔", "Transfer", yPos, tabTransfer);
+        btnSidebarTransfer = CreateSidebarButton("↔️", "Transfer", yPos, tabTransfer);
         yPos += itemHeight + spacing;
         
         btnSidebarCards = CreateSidebarButton("💳", "Kartlarım", yPos, tabCards);
@@ -8130,7 +8072,7 @@ public partial class FrmMain : XtraForm
         btnSidebarFx = CreateSidebarButton("💱", "Döviz Kurları", yPos, tabExchangeRates);
         yPos += itemHeight + spacing;
         
-        btnSidebarSettings = CreateSidebarButton("⚙", "Ayarlar", yPos, tabSettings);
+        btnSidebarSettings = CreateSidebarButton("⚙️", "Ayarlar", yPos, tabSettings);
         
         // Admin/BranchManager butonu (Admin veya Şube Yöneticisi için)
         if (Session.IsAdminOrBranchManager)
@@ -8151,22 +8093,24 @@ public partial class FrmMain : XtraForm
     {
         var btn = new SimpleButton()
         {
-            Location = new Point(5, yPos),
-            Size = new Size(SIDEBAR_WIDTH - 10, 42),
-            Text = $"{icon}  {text}",
+            Location = new Point(0, yPos),
+            Size = new Size(SIDEBAR_WIDTH, 48),
+            Text = $"   {icon}   {text}",
             Appearance = { 
-                Font = new Font("Segoe UI", 10, FontStyle.Bold),
-                ForeColor = Color.White,
+                Font = new Font("Segoe UI Semibold", 10.5F),
+                ForeColor = Color.FromArgb(180, 190, 210),
                 BackColor = Color.Transparent,
                 TextOptions = { HAlignment = DevExpress.Utils.HorzAlignment.Near },
-                Options = { UseForeColor = true, UseBackColor = true }
+                Options = { UseForeColor = true, UseBackColor = true, UseFont = true }
             },
             LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat },
-            Padding = new Padding(10, 0, 0, 0)
+            Padding = new Padding(10, 0, 0, 0),
+            Cursor = Cursors.Hand,
+            AllowFocus = false
         };
-        btn.AppearanceHovered.BackColor = Color.FromArgb(40, 80, 140);
+        btn.AppearanceHovered.BackColor = Color.FromArgb(30, 45, 80);
         btn.AppearanceHovered.ForeColor = Color.White;
-        btn.AppearancePressed.BackColor = Color.FromArgb(20, 60, 110);
+        btn.AppearancePressed.BackColor = Color.FromArgb(40, 60, 100);
         
         // Click event - tab değiştir
         btn.Click += (s, e) => {
@@ -8194,13 +8138,15 @@ public partial class FrmMain : XtraForm
             if (ctrl is SimpleButton btn)
             {
                 btn.Appearance.BackColor = Color.Transparent;
+                btn.Appearance.ForeColor = Color.FromArgb(180, 190, 210);
             }
         }
         
-        // Aktif butonu vurgula
+        // Aktif butonu vurgula - Vibrant Electric Blue with a left accent line (simulated by backcolor if we had better controls, but let's stick to simple for now)
         if (activeBtn != null)
         {
-            activeBtn.Appearance.BackColor = Color.FromArgb(13, 71, 161);
+            activeBtn.Appearance.BackColor = Color.FromArgb(0, 120, 215);
+            activeBtn.Appearance.ForeColor = Color.White;
         }
     }
     
@@ -8213,7 +8159,7 @@ public partial class FrmMain : XtraForm
         }
     }
     
-    // InitializeChatbot artık gerekli değil - ChatbotPanel kendi içinde AI servisini yönetiyor
 
 }
+
 

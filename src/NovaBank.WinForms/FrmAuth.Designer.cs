@@ -32,12 +32,13 @@ partial class FrmAuth
         this.tabControl1.TabPages.AddRange(new XtraTabPage[] { tabLogin, tabRegister });
         this.tabControl1.ShowTabHeader = DevExpress.Utils.DefaultBoolean.True;
         this.tabControl1.HeaderLocation = DevExpress.XtraTab.TabHeaderLocation.Top;
-        this.tabControl1.AppearancePage.Header.Font = new Font("Segoe UI", 10, FontStyle.Bold);
-        this.tabControl1.AppearancePage.HeaderActive.Font = new Font("Segoe UI", 10, FontStyle.Bold);
-        this.tabControl1.AppearancePage.HeaderActive.ForeColor = Color.FromArgb(25, 118, 210);
-        this.tabControl1.AppearancePage.Header.ForeColor = Color.FromArgb(100, 100, 100);
+        this.tabControl1.AppearancePage.Header.Font = new Font("Segoe UI Semibold", 11);
+        this.tabControl1.AppearancePage.HeaderActive.Font = new Font("Segoe UI Semibold", 11);
+        this.tabControl1.AppearancePage.HeaderActive.ForeColor = Color.FromArgb(0, 120, 215);
+        this.tabControl1.AppearancePage.Header.ForeColor = Color.FromArgb(120, 130, 140);
         this.tabControl1.LookAndFeel.UseDefaultLookAndFeel = false;
         this.tabControl1.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
+        this.tabControl1.Appearance.BackColor = Color.FromArgb(245, 247, 250);
         
         this.Controls.Add(this.tabControl1);
         this.Text = "NovaBank • Güvenli Giriş";
@@ -55,19 +56,28 @@ partial class FrmAuth
         var pnlLoginHeader = new PanelControl()
         {
             Location = new Point(0, 0),
-            Size = new Size(700, 100),
+            Size = new Size(700, 110),
             Dock = DockStyle.Top,
-            Appearance = { BackColor = Color.FromArgb(240, 240, 240) }
+            Appearance = { BackColor = Color.FromArgb(20, 33, 61) }
         };
+        pnlLoginHeader.LookAndFeel.UseDefaultLookAndFeel = false;
+        pnlLoginHeader.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
+        pnlLoginHeader.Appearance.Options.UseBackColor = true;
         
         var lblLoginTitle = new LabelControl() 
         { 
             Location = new Point(30, 25), 
             Size = new Size(500, 50), 
-            Text = "🏦 NovaBank'a Hoş Geldiniz", 
-            Appearance = { Font = new Font("Segoe UI", 22, FontStyle.Bold), ForeColor = Color.Black }
+            Text = "NOVA BANK", 
+            Appearance = { Font = new Font("Segoe UI", 26, FontStyle.Bold), ForeColor = Color.White }
         };
-        pnlLoginHeader.Controls.Add(lblLoginTitle);
+        var lblLoginSubtitle = new LabelControl()
+        {
+            Location = new Point(35, 75),
+            Text = "Geleceğin Dijital Bankacılığı",
+            Appearance = { Font = new Font("Segoe UI", 10), ForeColor = Color.FromArgb(150, 160, 180) }
+        };
+        pnlLoginHeader.Controls.AddRange(new Control[] { lblLoginTitle, lblLoginSubtitle });
         
         var pnlLoginContent = new PanelControl()
         {
@@ -102,7 +112,7 @@ partial class FrmAuth
         { 
             Location = new Point(25, 120), 
             Size = new Size(100, 25), 
-            Text = "🔒 Şifre:", 
+            Text = "🔑 Şifre:", 
             Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
         };
         lblPassword.Appearance.Options.UseFont = true;
@@ -135,15 +145,16 @@ partial class FrmAuth
         btnLogin = new SimpleButton() 
         { 
             Location = new Point(25, 220), 
-            Size = new Size(590, 50), 
-            Text = "✓ Giriş Yap",
-            Appearance = { Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = Color.White },
-            AppearanceHovered = { ForeColor = Color.White },
-            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
+            Size = new Size(590, 55), 
+            Text = "Giriş Yap",
+            Appearance = { Font = new Font("Segoe UI Semibold", 13), ForeColor = Color.White },
+            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat },
+            Cursor = Cursors.Hand
         };
-        btnLogin.Appearance.BackColor = Color.FromArgb(25, 118, 210);
-        btnLogin.AppearanceHovered.BackColor = Color.FromArgb(21, 101, 192);
-        btnLogin.AppearancePressed.BackColor = Color.FromArgb(13, 71, 161);
+        btnLogin.Appearance.BackColor = Color.FromArgb(0, 120, 215);
+        btnLogin.AppearanceHovered.BackColor = Color.FromArgb(0, 100, 190);
+        btnLogin.AppearancePressed.BackColor = Color.FromArgb(0, 80, 160);
+        btnLogin.Appearance.Options.UseBackColor = true;
         btnLogin.Click += btnLogin_Click;
         
         // Şifremi Unuttum linki
@@ -151,7 +162,7 @@ partial class FrmAuth
         {
             Location = new Point(25, 280),
             Size = new Size(200, 30),
-            Text = "🔑 Şifremi Unuttum",
+            Text = "🔓 Şifremi Unuttum",
             Appearance = { Font = new Font("Segoe UI", 9), ForeColor = Color.FromArgb(25, 118, 210) },
             LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
         };
@@ -163,7 +174,7 @@ partial class FrmAuth
         tabLogin.Controls.Add(pnlLoginHeader);
         tabLogin.Controls.Add(pnlLoginContent);
 
-        // Register tab - Modern Design
+        // Register tab - Modern Design - YAZILARI SİYAH
         this.tabRegister.Text = "📝 Kayıt Ol";
         this.tabRegister.Padding = new Padding(30);
         this.tabRegister.AutoScroll = true;
@@ -171,33 +182,44 @@ partial class FrmAuth
         var pnlRegisterHeader = new PanelControl()
         {
             Location = new Point(0, 0),
-            Size = new Size(700, 100),
+            Size = new Size(700, 110),
             Dock = DockStyle.Top,
-            Appearance = { BackColor = Color.FromArgb(76, 175, 80) }
+            Appearance = { BackColor = Color.FromArgb(20, 33, 61) }
         };
+        pnlRegisterHeader.LookAndFeel.UseDefaultLookAndFeel = false;
+        pnlRegisterHeader.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
+        pnlRegisterHeader.Appearance.Options.UseBackColor = true;
         
         var lblRegisterTitle = new LabelControl() 
         { 
             Location = new Point(30, 25), 
             Size = new Size(500, 50), 
-            Text = "✨ Yeni Hesap Oluştur", 
-            Appearance = { Font = new Font("Segoe UI", 22, FontStyle.Bold), ForeColor = Color.White }
+            Text = "YENİ HESAP", 
+            Appearance = { Font = new Font("Segoe UI", 26, FontStyle.Bold), ForeColor = Color.White }
         };
-        pnlRegisterHeader.Controls.Add(lblRegisterTitle);
+        var lblRegisterSubtitle = new LabelControl()
+        {
+            Location = new Point(35, 75),
+            Text = "NovaBank Dünyasına Katılın",
+            Appearance = { Font = new Font("Segoe UI", 10), ForeColor = Color.FromArgb(150, 160, 180) }
+        };
+        pnlRegisterHeader.Controls.AddRange(new Control[] { lblRegisterTitle, lblRegisterSubtitle });
         
         var pnlRegisterContent = new PanelControl()
         {
-            Location = new Point(30, 120),
-            Size = new Size(640, 650),
-            Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 230, 230) }
+            Location = new Point(30, 130),
+            Size = new Size(640, 680),
+            Appearance = { BackColor = Color.White, BorderColor = Color.FromArgb(230, 235, 240) }
         };
+        pnlRegisterContent.LookAndFeel.UseDefaultLookAndFeel = false;
+        pnlRegisterContent.LookAndFeel.Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat;
         
         var lblRegTc = new LabelControl() 
         { 
             Location = new Point(25, 25), 
             Size = new Size(150, 25), 
             Text = "🆔 TC Kimlik No:", 
-            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.Black }
         };
         lblRegTc.Appearance.Options.UseFont = true;
         lblRegTc.Appearance.Options.UseForeColor = true;
@@ -219,8 +241,10 @@ partial class FrmAuth
             Location = new Point(25, 110), 
             Size = new Size(80, 25), 
             Text = "👤 Ad:", 
-            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.Black }
         };
+        lblRegAd.Appearance.Options.UseFont = true;
+        lblRegAd.Appearance.Options.UseForeColor = true;
         txtRegAd = new TextEdit() 
         { 
             Location = new Point(25, 140), 
@@ -237,8 +261,10 @@ partial class FrmAuth
             Location = new Point(330, 110), 
             Size = new Size(100, 25), 
             Text = "👤 Soyad:", 
-            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.Black }
         };
+        lblRegSoyad.Appearance.Options.UseFont = true;
+        lblRegSoyad.Appearance.Options.UseForeColor = true;
         txtRegSoyad = new TextEdit() 
         { 
             Location = new Point(330, 140), 
@@ -255,8 +281,10 @@ partial class FrmAuth
             Location = new Point(25, 195), 
             Size = new Size(120, 25), 
             Text = "📧 E-posta:", 
-            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.Black }
         };
+        lblRegEmail.Appearance.Options.UseFont = true;
+        lblRegEmail.Appearance.Options.UseForeColor = true;
         txtRegEmail = new TextEdit() 
         { 
             Location = new Point(25, 225), 
@@ -273,8 +301,10 @@ partial class FrmAuth
             Location = new Point(25, 280), 
             Size = new Size(120, 25), 
             Text = "📱 Telefon:", 
-            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.Black }
         };
+        lblRegTel.Appearance.Options.UseFont = true;
+        lblRegTel.Appearance.Options.UseForeColor = true;
         txtRegTel = new TextEdit() 
         { 
             Location = new Point(25, 310), 
@@ -292,9 +322,11 @@ partial class FrmAuth
         { 
             Location = new Point(25, 365), 
             Size = new Size(120, 25), 
-            Text = "🔒 Şifre:", 
-            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+            Text = "🔑 Şifre:", 
+            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.Black }
         };
+        lblRegPassword.Appearance.Options.UseFont = true;
+        lblRegPassword.Appearance.Options.UseForeColor = true;
         txtRegPassword = new TextEdit() 
         { 
             Location = new Point(25, 395), 
@@ -323,9 +355,11 @@ partial class FrmAuth
         { 
             Location = new Point(25, 450), 
             Size = new Size(180, 25), 
-            Text = "🔒 Şifre (Tekrar):", 
-            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.FromArgb(60, 60, 60) }
+            Text = "🔑 Şifre (Tekrar):", 
+            Appearance = { Font = new Font("Segoe UI", 11, FontStyle.Bold), ForeColor = Color.Black }
         };
+        lblRegPasswordConfirm.Appearance.Options.UseFont = true;
+        lblRegPasswordConfirm.Appearance.Options.UseForeColor = true;
         txtRegPasswordConfirm = new TextEdit() 
         { 
             Location = new Point(25, 480), 
@@ -354,15 +388,16 @@ partial class FrmAuth
         btnRegister = new SimpleButton() 
         { 
             Location = new Point(25, 545), 
-            Size = new Size(590, 50), 
-            Text = "✓ Kayıt Ol",
-            Appearance = { Font = new Font("Segoe UI", 12, FontStyle.Bold), ForeColor = Color.White },
-            AppearanceHovered = { ForeColor = Color.White },
-            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat }
+            Size = new Size(590, 55), 
+            Text = "Kayıt Ol",
+            Appearance = { Font = new Font("Segoe UI Semibold", 13), ForeColor = Color.White },
+            LookAndFeel = { UseDefaultLookAndFeel = false, Style = DevExpress.LookAndFeel.LookAndFeelStyle.Flat },
+            Cursor = Cursors.Hand
         };
-        btnRegister.Appearance.BackColor = Color.FromArgb(76, 175, 80);
-        btnRegister.AppearanceHovered.BackColor = Color.FromArgb(69, 160, 73);
-        btnRegister.AppearancePressed.BackColor = Color.FromArgb(56, 142, 60);
+        btnRegister.Appearance.BackColor = Color.FromArgb(46, 204, 113);
+        btnRegister.AppearanceHovered.BackColor = Color.FromArgb(40, 180, 100);
+        btnRegister.AppearancePressed.BackColor = Color.FromArgb(35, 160, 90);
+        btnRegister.Appearance.Options.UseBackColor = true;
         btnRegister.Click += btnRegister_Click;
         
         pnlRegisterContent.Controls.AddRange(new Control[] { lblRegTc, txtRegTc, lblRegAd, txtRegAd, lblRegSoyad, txtRegSoyad, lblRegEmail, txtRegEmail, lblRegTel, txtRegTel, lblRegPassword, txtRegPassword, btnShowRegPassword, lblRegPasswordConfirm, txtRegPasswordConfirm, btnShowRegPasswordConfirm, btnRegister });
